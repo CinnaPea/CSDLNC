@@ -1,49 +1,240 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var isAuthPage = controller == "Account";
+
+    var canAdmin = User.HasClaim("Permission", "Q001") || User.HasClaim("Permission", "Q010");
+    var canCatalog = User.HasClaim("Permission", "Q002");
+    var canBorrow = User.HasClaim("Permission", "Q003");
+    var canReturn = User.HasClaim("Permission", "Q004");
+    var canFine = User.HasClaim("Permission", "Q005");
+    var canInventory = User.HasClaim("Permission", "Q006");
+    var canLiquidate = User.HasClaim("Permission", "Q007");
+    var canDestroy = User.HasClaim("Permission", "Q008");
+    var canReport = User.HasClaim("Permission", "Q009");
+}
+
+<!DOCTYPE html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - CSDLNC</title>
+
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/styles.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/CSDLNC.styles.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">CSDLNC</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    @if (isAuthPage)
+    {
+        <main class="auth-page">
             @RenderBody()
         </main>
-    </div>
+    }
+    else
+    {
+        <div class="page-wrapper" id="main-wrapper"
+             data-layout="vertical"
+             data-navbarbg="skin6"
+             data-sidebartype="full"
+             data-sidebar-position="fixed"
+             data-header-position="static">
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - CSDLNC - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <aside class="left-sidebar">
+                <div>
+                    <div class="user-profile position-relative">
+                        <div class="profile-text hide-menu pt-3 px-3">
+                            <div class="text-white fw-semibold">
+                                @(User.Identity?.Name ?? "Người dùng")
+                            </div>
+                            <small class="text-white-50">CSDLNC Library</small>
+                        </div>
+
+                        <div class="close-btn cursor-pointer d-flex align-items-center justify-content-center d-xl-none end-0 p-2 position-absolute sidebartoggler text-white top-0"
+                             id="sidebarCollapse">
+                            <iconify-icon icon="solar:close-circle-linear"></iconify-icon>
+                        </div>
+                    </div>
+
+                    <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
+                        <ul id="sidebarnav">
+                            <li class="nav-small-cap">
+                                <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                <span class="hide-menu">Tổng quan</span>
+                            </li>
+
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" asp-controller="Home" asp-action="Index">
+                                    <iconify-icon icon="solar:home-2-line-duotone"></iconify-icon>
+                                    <span class="hide-menu">Dashboard</span>
+                                </a>
+                            </li>
+
+                            @if (canAdmin)
+                            {
+                                <li class="nav-small-cap">
+                                    <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                    <span class="hide-menu">Quản trị</span>
+                                </li>
+
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="NguoiDung" asp-action="Index">
+                                        <iconify-icon icon="solar:users-group-rounded-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Quản lý người dùng</span>
+                                    </a>
+                                </li>
+                            }
+
+                            @if (canCatalog || canBorrow || canReturn || canFine)
+                            {
+                                <li class="nav-small-cap">
+                                    <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                    <span class="hide-menu">Thủ thư nghiệp vụ</span>
+                                </li>
+
+                                @if (canCatalog)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="Sach" asp-action="Index">
+                                            <iconify-icon icon="solar:book-2-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Danh mục sách</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canBorrow)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuMuon" asp-action="Create">
+                                            <iconify-icon icon="solar:document-add-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Lập phiếu mượn</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canReturn)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="TraSach" asp-action="Index">
+                                            <iconify-icon icon="solar:refresh-square-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Cập nhật trả sách</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canFine)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="Index">
+                                            <iconify-icon icon="solar:bill-list-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Phiếu phạt</span>
+                                        </a>
+                                    </li>
+                                }
+                            }
+
+                            @if (canInventory || canLiquidate || canDestroy)
+                            {
+                                <li class="nav-small-cap">
+                                    <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                    <span class="hide-menu">Kho và kiểm kê</span>
+                                </li>
+
+                                @if (canInventory)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="KiemKe" asp-action="Index">
+                                            <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Kiểm kê sách</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canLiquidate)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="ThanhLy" asp-action="Index">
+                                            <iconify-icon icon="solar:archive-down-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Thanh lý sách</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canDestroy)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="HuySach" asp-action="Index">
+                                            <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Hủy sách</span>
+                                        </a>
+                                    </li>
+                                }
+                            }
+
+                            @if (canReport)
+                            {
+                                <li class="nav-small-cap">
+                                    <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                    <span class="hide-menu">Quản lý và báo cáo</span>
+                                </li>
+
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="BaoCao" asp-action="Index">
+                                        <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Thống kê báo cáo</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="body-wrapper app-body">
+                <header class="app-header app-topbar">
+                    <nav class="navbar navbar-expand-lg navbar-light">
+                        <ul class="navbar-nav">
+                            <li class="nav-item d-block d-xl-none">
+                                <a class="nav-link sidebartoggler" id="headerCollapse" href="javascript:void(0)">
+                                    <iconify-icon icon="solar:hamburger-menu-linear"></iconify-icon>
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="ms-auto d-flex align-items-center gap-3">
+                            <span class="fw-semibold">
+                                @User.Identity?.Name
+                            </span>
+
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="m-0">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Đăng xuất
+                                </button>
+                            </form>
+                        </div>
+                    </nav>
+                </header>
+
+                <main class="app-main">
+                    @RenderBody()
+                </main>
+            </div>
         </div>
-    </footer>
+    }
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/sidebarmenu.js" asp-append-version="true"></script>
+    <script src="~/js/app.min.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/iconify-icon@1.0.8/dist/iconify-icon.min.js"></script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

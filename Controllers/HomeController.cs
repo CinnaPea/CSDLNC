@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using CSDLNC.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace CSDLNC.Controllers
 {
@@ -13,6 +14,7 @@ namespace CSDLNC.Controllers
             _logger = logger;
         }
 
+        [Authorize]
         public IActionResult Index()
         {
             return View();
