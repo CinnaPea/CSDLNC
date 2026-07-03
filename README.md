@@ -10,28 +10,35 @@ git pull
 
 Mỗi người phụ trách theo tài khoản demo và nhóm quyền:
 
-- ND002 - thuthu01: Thu thu nghiep vu
-  Phụ trách: danh mục sách, lập phiếu mượn, cập nhật trả sách, phiếu phạt.
+ND004 - ketoan01 (Hiếu):
+- Lập phiếu phạt hỏng/mất
+- Lập phiếu phạt quá hạn
+- Thống kê sách hỏng/mất trong tháng
 
-- ND003 - kho01: Kho va kiem ke
-  Phụ trách: nhận bản giao sách, kiểm kê sách, thanh lý sách, hủy sách.
+ND002 - thuthu01 (Phúc):
+- Lập phiếu mượn trả sách
+- Cập nhật trả sách
+- Thống kê vi phạm mượn trả sách trong tháng
 
-- ND004 - ketoan01: Quan ly va bao cao
-  Phụ trách: thống kê vi phạm, thống kê sách hỏng/mất, tổng hợp phiếu phạt.
+ND003 - kho01 (Quang):
+- Lập biên bản nhận bàn giao sách
+- Lập phiếu kiểm kê sách
+- Thống kê số lượng sách theo đầu sách, thể loại
 
-- ND001 - admin:
+ND001 - admin:
   Chỉ dùng để kiểm tra tổng thể, chỉ động vào sau khi hoàn thành cả 3.
 
-3. Khong tu y sua phan chung
+3. Không tự ý sửa n chung
 
 Không tự ý sửa các phần sau nếu chưa thống nhất:
-
 - Program.cs
 - _Layout.cshtml
 - Auth/Login/Signup
 - Sidebar/phan quyen
 - File SQL cuoi
 - Connection string
+
+Không ai sửa layout/CSS chung, mỗi người làm controller/view phần mình; nếu cần CSS thì tạo file riêng theo module rồi gắn bằng @section Styles, conflict thì báo nhóm xử lý chung!
 
 4. Quy tắc commit
 
