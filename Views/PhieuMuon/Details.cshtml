@@ -1,0 +1,113 @@
+@model PhieuMuonDetailsViewModel
+
+@{
+    ViewData["Title"] = "Phiếu mượn trả sách";
+    var first = Model.ChiTiet.First();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/phuc-workflows.css" asp-append-version="true" />
+}
+
+<div class="container-fluid workflow-shell borrow-page">
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success no-print">@successMessage</div>
+    }
+
+    <div class="borrow-titlebar no-print">
+        <a asp-action="Index" class="borrow-back" title="Quay lại danh sách">
+            <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+        </a>
+        <div>
+            <div class="borrow-eyebrow">Mẫu biểu</div>
+            <h1>Phiếu mượn trả sách</h1>
+        </div>
+        <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-primary" onclick="window.print()">
+                <iconify-icon icon="solar:printer-2-line-duotone"></iconify-icon>
+                In phiếu
+            </button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Quay lại danh sách</a>
+        </div>
+    </div>
+
+    <section class="mb-sheet borrow-mb-sheet">
+        <div class="mb-topline">
+            <strong>THƯ VIỆN ĐẠI HỌC X</strong>
+            <strong>Số phiếu: @first.SoPhieuMuon</strong>
+        </div>
+
+        <h2>PHIẾU MƯỢN TRẢ SÁCH</h2>
+
+        <div class="mb-date-line">
+            Ngày mượn: @first.NgayMuon.ToString("dd/MM/yyyy") - Hạn trả: @first.HanTra.ToString("dd/MM/yyyy")
+        </div>
+
+        <div class="mb-info-lines">
+            <div>Mã sinh viên:<span>@first.MaSinhVien</span></div>
+            <div class="mb-two-cols">
+                <div>Họ và tên:<span>@first.HoTen</span></div>
+                <div>Giới tính:<span>@first.GioiTinh</span></div>
+            </div>
+            <div class="mb-two-cols">
+                <div>Lớp:<span>@first.Lop</span></div>
+                <div>Khóa:<span>@first.Khoa</span></div>
+            </div>
+            <div>Số điện thoại:<span>@first.SoDienThoai</span></div>
+        </div>
+
+        <table class="mb-table borrow-mb-table">
+            <thead>
+                <tr>
+                    <th rowspan="2">STT</th>
+                    <th rowspan="2">Mã sách</th>
+                    <th rowspan="2">Tên sách</th>
+                    <th rowspan="2">Thể loại</th>
+                    <th rowspan="2">Tác giả</th>
+                    <th rowspan="2">NXB</th>
+                    <th rowspan="2">Năm XB</th>
+                    <th rowspan="2">Ngày trả</th>
+                    <th rowspan="2">Số lượng</th>
+                    <th rowspan="2">Ghi chú</th>
+                    <th colspan="2">Ký trả</th>
+                </tr>
+                <tr>
+                    <th>Sinh viên</th>
+                    <th>Thủ thư</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < Model.ChiTiet.Count; i++)
+                {
+                    var item = Model.ChiTiet[i];
+                    <tr>
+                        <td class="text-center">@(i + 1)</td>
+                        <td>@item.MaSach</td>
+                        <td>@item.TenSach</td>
+                        <td>@item.TheLoai</td>
+                        <td>@item.TacGia</td>
+                        <td>@item.NhaXuatBan</td>
+                        <td class="text-center">@item.NamXuatBan</td>
+                        <td>@(item.NgayTra?.ToString("dd/MM/yyyy") ?? "")</td>
+                        <td class="text-center">1</td>
+                        <td>@item.GhiChu</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+                <tr class="mb-total-row">
+                    <td colspan="8">TỔNG SỐ LƯỢNG:</td>
+                    <td class="text-center">@Model.TongSoLuong</td>
+                    <td colspan="3"></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="mb-date-sign">Ngày ..... tháng ..... năm .....</div>
+        <div class="mb-signatures">
+            <strong>Sinh viên</strong>
+            <strong>Thủ thư</strong>
+        </div>
+    </section>
+</div>

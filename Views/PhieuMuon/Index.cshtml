@@ -1,0 +1,210 @@
+@model PhieuMuonIndexViewModel
+
+@{
+    ViewData["Title"] = "Phiếu mượn trả sách";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/phuc-workflows.css" asp-append-version="true" />
+}
+
+<div class="container-fluid workflow-shell borrow-page">
+    <div class="borrow-titlebar">
+        <a asp-controller="Home" asp-action="Index" class="borrow-back" title="Quay lại dashboard">
+            <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+        </a>
+        <div>
+            <div class="borrow-eyebrow">Nghiệp vụ thủ thư</div>
+            <h1>Phiếu mượn trả sách</h1>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="metric-card metric-blue">
+                <div class="metric-label">Tổng phiếu</div>
+                <div class="metric-value">@Model.TongPhieu</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-amber">
+                <div class="metric-label">Đang mượn</div>
+                <div class="metric-value">@Model.DangMuon</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-green">
+                <div class="metric-label">Đã trả</div>
+                <div class="metric-value">@Model.DaTra</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-red">
+                <div class="metric-label">Quá hạn</div>
+                <div class="metric-value">@Model.QuaHan</div>
+            </div>
+        </div>
+    </div>
+
+    <section class="borrow-board">
+        <div class="borrow-board-header">
+            <h2>Danh sách phiếu mượn trả</h2>
+        </div>
+
+        <div class="borrow-toolbar">
+            <form asp-action="Index" method="get" class="borrow-search">
+                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                <input name="tuKhoa"
+                       value="@Model.TuKhoa"
+                       placeholder="Nhập số phiếu, mã sinh viên hoặc tên sinh viên" />
+            </form>
+
+            <div class="borrow-actions">
+                <a asp-action="Create" class="btn btn-primary">
+                    <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>
+                    Thêm phiếu mượn trả
+                </a>
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        form="loanListForm"
+                        formaction="@Url.Action("DeleteSelected", "PhieuMuon")"
+                        formmethod="post"
+                        id="deleteSelectedButton">
+                    <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                    Xóa mục chọn
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                    Làm mới
+                </a>
+            </div>
+        </div>
+
+        <form asp-action="DeleteSelected" method="post" id="loanListForm">
+            @Html.AntiForgeryToken()
+            <div class="table-responsive">
+                <table class="table borrow-table align-middle">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 44px;">
+                                <input type="checkbox" id="selectAllLoans" />
+                            </th>
+                            <th>Số phiếu MT</th>
+                            <th>Tên sinh viên</th>
+                            <th>Mã sinh viên</th>
+                            <th>Ngày mượn</th>
+                            <th>Hạn trả</th>
+                            <th>Ngày trả</th>
+                            <th>Số sách</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.DanhSachPhieu)
+                        {
+                            var isOverdue = item.SoSachChuaTra > 0 && item.HanTra < DateOnly.FromDateTime(DateTime.Today);
+                            var statusText = isOverdue ? "Quá hạn" : item.SoSachChuaTra == 0 ? "Hoàn thành" : "Chưa trả";
+                            var statusClass = isOverdue ? "status-overdue" : item.SoSachChuaTra == 0 ? "status-done" : "status-open";
+
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" name="selectedIds" value="@item.SoPhieuMuon" class="loan-checkbox" />
+                                </td>
+                                <td class="fw-semibold">@item.SoPhieuMuon</td>
+                                <td>@item.TenSinhVien</td>
+                                <td>@item.MaSinhVien</td>
+                                <td>@item.NgayMuon.ToString("dd/MM/yyyy")</td>
+                                <td>@item.HanTra.ToString("dd/MM/yyyy")</td>
+                                <td>@(item.NgayTra?.ToString("dd/MM/yyyy") ?? "-")</td>
+                                <td>@item.TongSoLuong</td>
+                                <td>
+                                    <span class="borrow-status @statusClass">@statusText</span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="row-actions">
+                                        <a asp-controller="TraSach"
+                                           asp-action="Index"
+                                           asp-route-soPhieuMuon="@item.SoPhieuMuon"
+                                           class="icon-action"
+                                           title="Sửa/cập nhật trả sách">
+                                            <iconify-icon icon="solar:pen-line-duotone"></iconify-icon>
+                                        </a>
+                                        <a asp-action="Details"
+                                           asp-route-id="@item.SoPhieuMuon"
+                                           class="icon-action"
+                                           title="Xem và in phiếu">
+                                            <iconify-icon icon="solar:document-text-line-duotone"></iconify-icon>
+                                        </a>
+                                        <button type="submit"
+                                                name="id"
+                                                value="@item.SoPhieuMuon"
+                                                formaction="@Url.Action("Delete", "PhieuMuon")"
+                                                formmethod="post"
+                                                class="icon-action danger confirm-delete"
+                                                title="Xóa phiếu">
+                                            <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+
+                        @if (!Model.DanhSachPhieu.Any())
+                        {
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    Chưa có phiếu mượn trả phù hợp.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const selectAll = document.getElementById("selectAllLoans");
+            const checkboxes = () => [...document.querySelectorAll(".loan-checkbox")];
+            const deleteSelectedButton = document.getElementById("deleteSelectedButton");
+
+            selectAll?.addEventListener("change", () => {
+                checkboxes().forEach(checkbox => checkbox.checked = selectAll.checked);
+            });
+
+            deleteSelectedButton?.addEventListener("click", event => {
+                if (!checkboxes().some(checkbox => checkbox.checked)) {
+                    event.preventDefault();
+                    alert("Vui lòng chọn ít nhất một phiếu cần xóa.");
+                    return;
+                }
+
+                if (!confirm("Xóa các phiếu đã chọn? Trạng thái sách chưa trả sẽ được đưa về trong kho.")) {
+                    event.preventDefault();
+                }
+            });
+
+            document.querySelectorAll(".confirm-delete").forEach(button => {
+                button.addEventListener("click", event => {
+                    if (!confirm("Xóa phiếu mượn này?")) {
+                        event.preventDefault();
+                    }
+                });
+            });
+        })();
+    </script>
+}
