@@ -1,8 +1,90 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Well well, well!</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+@section Styles {
+    <style>
+        .demo-home {
+            background: #ffffff;
+            border: 1px solid #cfd8e3;
+            min-height: calc(100vh - 120px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .demo-home-title {
+            background: #214f82;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 800;
+            font-size: 28px;
+            letter-spacing: 0.5px;
+            padding: 18px 12px;
+            text-transform: uppercase;
+        }
+
+        .demo-home-subtitle {
+            background: #4b4b4b;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 800;
+            font-size: 30px;
+            letter-spacing: 0.5px;
+            padding: 18px 12px;
+            text-transform: uppercase;
+        }
+
+        .demo-home-image {
+            flex: 1;
+            min-height: 520px;
+            background-image: url('/images/backgrounds/mta.webp');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .demo-home-footer {
+            background: #4b4b4b;
+            color: #ffffff;
+            text-align: center;
+            font-weight: 800;
+            font-size: 20px;
+            padding: 14px 12px;
+            text-transform: uppercase;
+        }
+
+        @@media (max-width: 768px) {
+            .demo-home-title {
+                font-size: 20px;
+            }
+
+            .demo-home-subtitle {
+                font-size: 22px;
+            }
+
+            .demo-home-footer {
+                font-size: 14px;
+            }
+
+            .demo-home-image {
+                min-height: 360px;
+            }
+        }
+    </style>
+}
+
+<div class="demo-home">
+    <div class="demo-home-title">
+        Hệ thống quản lý thư viện
+    </div>
+
+    <div class="demo-home-subtitle">
+        Học viện Kỹ thuật Quân sự
+    </div>
+
+    <div class="demo-home-image"></div>
+
+    <div class="demo-home-footer">
+        @@Authors by QuangPhuc - MinhHieu - NhatQuang CNTTK58
+    </div>
 </div>

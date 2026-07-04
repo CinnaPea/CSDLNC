@@ -1,0 +1,180 @@
+﻿@model CSDLNC.Models.DanhMucSachViewModel
+
+@{
+    ViewData["Title"] = "Quản lý danh mục sách";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
+
+<div class="kho-page">
+    <div class="kho-title">
+        <h3>Quản lý danh mục sách</h3>
+        <p>Thêm, cập nhật và xóa thông tin đầu sách trong thư viện.</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3 mb-3 align-items-stretch">
+            <div class="col-lg-8 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Thông tin nhập / hiển thị</h5>
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="Madausach" class="form-label">Mã đầu sách</label>
+                            <input asp-for="Madausach" class="form-control bg-light" readonly />
+                            <span asp-validation-for="Madausach" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Tendausach" class="form-label">Tên đầu sách</label>
+                            <input asp-for="Tendausach" class="form-control" />
+                            <span asp-validation-for="Tendausach" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Theloai" class="form-label">Thể loại</label>
+                            <select asp-for="Theloai" asp-items="Model.TheLoaiOptions" class="form-select">
+                                <option value="">-- Chọn thể loại --</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Tacgia" class="form-label">Tác giả</label>
+                            <input asp-for="Tacgia" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Namxuatban" class="form-label">Năm xuất bản</label>
+                            <input asp-for="Namxuatban" type="number" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Manhaxuatban" class="form-label">Nhà xuất bản</label>
+                            <select asp-for="Manhaxuatban" asp-items="Model.NhaXuatBanOptions" class="form-select">
+                                <option value="">-- Chọn NXB --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Chức năng</h5>
+
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button type="submit" asp-action="Them" class="btn btn-filter-primary w-100">
+                                Thêm
+                            </button>
+                        </div>
+
+                        <div class="col-6">
+                            <button type="submit" asp-action="CapNhat" class="btn btn-filter-secondary w-100">
+                                Cập nhật
+                            </button>
+                        </div>
+
+                        <div class="col-6">
+                            <button type="submit" asp-action="Xoa" class="btn btn-outline-danger w-100">
+                                Xóa
+                            </button>
+                        </div>
+
+                        <div class="col-6">
+                            <a asp-action="Index" class="btn btn-filter-secondary w-100">
+                                Tải lại
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="summary-line mt-3">
+                        <span>Tổng đầu sách</span>
+                        <b>@Model.Rows.Count</b>
+                    </div>
+
+                    <small class="text-muted d-block mt-3">
+                        Chọn một dòng trong bảng để đưa dữ liệu lên form.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="panel-card">
+        <h4 class="mb-3">Danh sách đầu sách</h4>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle kho-table">
+                <thead>
+                    <tr>
+                        <th>Mã đầu sách</th>
+                        <th>Tên đầu sách</th>
+                        <th>Thể loại</th>
+                        <th>Tác giả</th>
+                        <th>Năm XB</th>
+                        <th>Mã NXB</th>
+                        <th class="text-end">Số lượng</th>
+                        <th class="text-end">Hiện có</th>
+                        <th class="text-end">Đang mượn</th>
+                        <th class="text-end">Hỏng/mất</th>
+                        <th class="text-end">Chọn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Any())
+                    {
+                        foreach (var item in Model.Rows)
+                        {
+                            var isSelected = item.Madausach == Model.Madausach;
+
+                            <tr class="@(isSelected ? "selected-row" : "")">
+                                <td>@item.Madausach</td>
+                                <td>@item.Tendausach</td>
+                                <td>@item.Theloai</td>
+                                <td>@item.Tacgia</td>
+                                <td>@item.Namxuatban</td>
+                                <td>@item.Manhaxuatban</td>
+                                <td class="text-end">@item.Soluong</td>
+                                <td class="text-end">@item.Soluonghienco</td>
+                                <td class="text-end">@item.Soluongdangmuon</td>
+                                <td class="text-end">@item.Soluonghongmat</td>
+                                <td class="text-end">
+                                    <a asp-action="Index"
+                                       asp-route-madausach="@item.Madausach"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Chọn
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="11" class="text-center text-muted">
+                                Chưa có dữ liệu đầu sách.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
