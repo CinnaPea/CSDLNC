@@ -1,0 +1,554 @@
+@model PhieuMuonCreateViewModel
+
+@{
+    ViewData["Title"] = "Phiếu mượn trả sách";
+    var selectedBooks = Model.DanhSachSach
+        .Where(x => !string.IsNullOrWhiteSpace(x.MaSach))
+        .ToList();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/phuc-workflows.css" asp-append-version="true" />
+}
+
+<div class="container-fluid workflow-shell borrow-page">
+    <div class="borrow-titlebar">
+        <a asp-action="Index" class="borrow-back" title="Quay lại danh sách">
+            <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+        </a>
+        <div>
+            <div class="borrow-eyebrow">Phiếu mượn trả sách</div>
+            <h1>Thêm phiếu mượn trả</h1>
+        </div>
+    </div>
+
+    <form asp-action="Create" method="post" id="borrowForm">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <section class="borrow-form-section">
+            <h2>Thông tin chung</h2>
+            <div class="borrow-grid">
+                <div>
+                    <label asp-for="SoPhieuMuon" class="form-label">Số phiếu mượn trả</label>
+                    <input asp-for="SoPhieuMuon" class="form-control" readonly />
+                    <span asp-validation-for="SoPhieuMuon" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="NgayMuon" class="form-label">Ngày lập</label>
+                    <input asp-for="NgayMuon" type="date" class="form-control" />
+                    <span asp-validation-for="NgayMuon" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="HanTra" class="form-label">Hạn trả</label>
+                    <input asp-for="HanTra" type="date" class="form-control" />
+                    <span asp-validation-for="HanTra" class="text-danger"></span>
+                </div>
+                <div>
+                    <label class="form-label">Người lập</label>
+                    <input value="@(User.Identity?.Name ?? "Thủ thư")" class="form-control" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Ngày trả</label>
+                    <input class="form-control" value="Chưa trả" readonly />
+                </div>
+            </div>
+        </section>
+
+        <section class="borrow-form-section">
+            <div class="section-heading-row">
+                <h2>Thông tin sinh viên</h2>
+                <div class="section-actions">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#studentInfoModal">
+                        <iconify-icon icon="solar:add-circle-line-duotone"></iconify-icon>
+                        Thêm sinh viên
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#studentSearchModal">
+                        <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                        Tìm kiếm
+                    </button>
+                </div>
+            </div>
+
+            <div class="borrow-grid">
+                <div>
+                    <label asp-for="MaSinhVien" class="form-label">Mã sinh viên</label>
+                    <input asp-for="MaSinhVien" class="form-control" id="studentCodeInput" />
+                    <span asp-validation-for="MaSinhVien" class="text-danger"></span>
+                </div>
+                <div>
+                    <label class="form-label">Họ tên</label>
+                    <input class="form-control" id="studentNameInput" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Điện thoại</label>
+                    <input class="form-control" id="studentPhoneInput" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Khóa</label>
+                    <input class="form-control" id="studentCourseInput" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Lớp</label>
+                    <input class="form-control" id="studentClassInput" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Trạng thái</label>
+                    <input class="form-control" id="studentStatusInput" readonly />
+                </div>
+            </div>
+        </section>
+
+        <section class="borrow-form-section">
+            <div class="section-heading-row">
+                <h2>Thông tin sách mượn</h2>
+                <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#bookSearchModal">
+                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    Tìm kiếm
+                </button>
+            </div>
+
+            <div class="borrow-grid">
+                <div>
+                    <label class="form-label">Mã sách</label>
+                    <input class="form-control" id="bookCodePreview" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Tên sách</label>
+                    <input class="form-control" id="bookNamePreview" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Thể loại</label>
+                    <input class="form-control" id="bookCategoryPreview" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Tác giả</label>
+                    <input class="form-control" id="bookAuthorPreview" readonly />
+                </div>
+                <div>
+                    <label class="form-label">Nhà xuất bản</label>
+                    <input class="form-control" id="bookPublisherPreview" readonly />
+                </div>
+            </div>
+        </section>
+
+        <section class="borrow-form-section">
+            <div class="section-heading-row">
+                <h2>Danh sách sách mượn</h2>
+                <button type="button" class="btn btn-outline-danger" id="clearBookRows">
+                    <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                    Xóa tất cả
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table borrow-table align-middle" id="borrowBooksTable">
+                    <thead>
+                        <tr>
+                            <th class="text-center" style="width: 44px;"></th>
+                            <th>Mã sách</th>
+                            <th>Tên sách</th>
+                            <th>Thể loại</th>
+                            <th>Tác giả</th>
+                            <th>NXB</th>
+                            <th style="width: 180px;">Ghi chú</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < selectedBooks.Count; i++)
+                        {
+                            <tr data-book-row data-book-code="@selectedBooks[i].MaSach">
+                                <td class="text-center">
+                                    <input type="checkbox" />
+                                </td>
+                                <td class="fw-semibold">
+                                    <input type="hidden" name="DanhSachSach[@i].MaSach" value="@selectedBooks[i].MaSach" class="book-code-input" />
+                                    <span class="book-code-label">@selectedBooks[i].MaSach</span>
+                                </td>
+                                <td class="book-name-cell">-</td>
+                                <td class="book-category-cell">-</td>
+                                <td class="book-author-cell">-</td>
+                                <td class="book-publisher-cell">-</td>
+                                <td>
+                                    <input name="DanhSachSach[@i].GhiChu" value="@selectedBooks[i].GhiChu" class="form-control form-control-sm" maxlength="255" />
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="icon-action danger remove-book-row" title="Xóa sách">
+                                        <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="empty-row-message @(selectedBooks.Any() ? "d-none" : "")" id="emptyBookMessage">
+                Chưa chọn sách mượn. Bấm “Tìm kiếm” để chọn sách trong kho.
+            </div>
+        </section>
+
+        <div class="form-footer-actions">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+            <button type="button" class="btn btn-info text-white" id="printDraftButton">In</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal fade" id="studentInfoModal" tabindex="-1" aria-labelledby="studentInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content workflow-modal">
+            <div class="modal-header border-0">
+                <h2 class="modal-title" id="studentInfoModalLabel">Thông tin sinh viên</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="borrow-grid">
+                    <div>
+                        <label class="form-label">Mã sinh viên</label>
+                        <input class="form-control" id="newStudentCode" value="@Model.MaSinhVienGoiY" readonly />
+                    </div>
+                    <div>
+                        <label class="form-label">Họ tên</label>
+                        <input class="form-control" id="newStudentName" />
+                    </div>
+                    <div>
+                        <label class="form-label">Giới tính</label>
+                        <select class="form-select" id="newStudentGender">
+                            <option>Nam</option>
+                            <option>Nữ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Điện thoại</label>
+                        <input class="form-control" id="newStudentPhone" />
+                    </div>
+                    <div>
+                        <label class="form-label">Khóa</label>
+                        <input class="form-control" id="newStudentCourse" />
+                    </div>
+                    <div>
+                        <label class="form-label">Lớp</label>
+                        <input class="form-control" id="newStudentClass" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <button type="button" class="btn btn-primary" id="applyStudentInfo">Lưu</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="studentSearchModal" tabindex="-1" aria-labelledby="studentSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content workflow-modal list-modal">
+            <div class="modal-header border-0">
+                <h2 class="modal-title" id="studentSearchModalLabel">Thông tin sinh viên</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    <input class="modal-search-input" data-filter-table="studentListTable" placeholder="Nhập thông tin tìm kiếm" />
+                </div>
+                <div class="table-responsive">
+                    <table class="table borrow-table align-middle" id="studentListTable">
+                        <thead>
+                            <tr>
+                                <th>Mã sinh viên</th>
+                                <th>Họ tên</th>
+                                <th>Giới tính</th>
+                                <th>Lớp</th>
+                                <th>Khóa</th>
+                                <th>Điện thoại</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SinhVienGoiY)
+                            {
+                                <tr data-search="@($"{item.MaSinhVien} {item.HoTen} {item.Lop} {item.Khoa} {item.SoDienThoai}")">
+                                    <td class="fw-semibold">@item.MaSinhVien</td>
+                                    <td>@item.HoTen</td>
+                                    <td>@item.GioiTinh</td>
+                                    <td>@item.Lop</td>
+                                    <td>@item.Khoa</td>
+                                    <td>@item.SoDienThoai</td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm pick-student"
+                                                data-code="@item.MaSinhVien"
+                                                data-name="@item.HoTen"
+                                                data-class="@item.Lop"
+                                                data-course="@item.Khoa"
+                                                data-phone="@item.SoDienThoai"
+                                                data-status="@item.TrangThai">
+                                            Chọn
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="bookSearchModal" tabindex="-1" aria-labelledby="bookSearchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content workflow-modal list-modal">
+            <div class="modal-header border-0">
+                <h2 class="modal-title" id="bookSearchModalLabel">Thông tin đầu sách</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-search">
+                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    <input class="modal-search-input" data-filter-table="bookListTable" placeholder="Nhập thông tin tìm kiếm" />
+                </div>
+                <div class="table-responsive">
+                    <table class="table borrow-table align-middle" id="bookListTable">
+                        <thead>
+                            <tr>
+                                <th>Mã sách</th>
+                                <th>Mã đầu sách</th>
+                                <th>Tên sách</th>
+                                <th>Thể loại</th>
+                                <th>Tác giả</th>
+                                <th>NXB</th>
+                                <th>Tình trạng</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.SachCoTheMuon)
+                            {
+                                <tr data-search="@($"{item.MaSach} {item.MaDauSach} {item.TenSach} {item.TheLoai} {item.TacGia} {item.NhaXuatBan}")">
+                                    <td class="fw-semibold">@item.MaSach</td>
+                                    <td>@item.MaDauSach</td>
+                                    <td>@item.TenSach</td>
+                                    <td>@item.TheLoai</td>
+                                    <td>@item.TacGia</td>
+                                    <td>@item.NhaXuatBan</td>
+                                    <td>@item.TinhTrang</td>
+                                    <td class="text-end">
+                                        <button type="button"
+                                                class="btn btn-primary btn-sm pick-book"
+                                                data-code="@item.MaSach"
+                                                data-name="@item.TenSach"
+                                                data-category="@item.TheLoai"
+                                                data-author="@item.TacGia"
+                                                data-publisher="@item.NhaXuatBan">
+                                            Chọn
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                            @if (!Model.SachCoTheMuon.Any())
+                            {
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        Không có sách trong kho có thể mượn.
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const createStudentUrl = "@Url.Action("CreateStudentQuick", "PhieuMuon")";
+
+            const escapeHtml = value => (value ?? "").toString()
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;");
+
+            const hideModal = id => {
+                const element = document.getElementById(id);
+                const modal = bootstrap.Modal.getInstance(element);
+                modal?.hide();
+            };
+
+            const setStudent = student => {
+                document.getElementById("studentCodeInput").value = student.code ?? "";
+                document.getElementById("studentNameInput").value = student.name ?? "";
+                document.getElementById("studentPhoneInput").value = student.phone ?? "";
+                document.getElementById("studentCourseInput").value = student.course ?? "";
+                document.getElementById("studentClassInput").value = student.className ?? "";
+                document.getElementById("studentStatusInput").value = student.status ?? "";
+            };
+
+            document.querySelectorAll(".pick-student").forEach(button => {
+                button.addEventListener("click", () => {
+                    setStudent({
+                        code: button.dataset.code,
+                        name: button.dataset.name,
+                        className: button.dataset.class,
+                        course: button.dataset.course,
+                        phone: button.dataset.phone,
+                        status: button.dataset.status
+                    });
+                    hideModal("studentSearchModal");
+                });
+            });
+
+            document.getElementById("applyStudentInfo")?.addEventListener("click", async () => {
+                const code = document.getElementById("newStudentCode").value.trim();
+                if (!code) {
+                    alert("Vui lòng nhập mã sinh viên.");
+                    return;
+                }
+
+                const token = document.querySelector("input[name='__RequestVerificationToken']").value;
+                const formData = new FormData();
+                formData.append("__RequestVerificationToken", token);
+                formData.append("MaSinhVien", code);
+                formData.append("HoTen", document.getElementById("newStudentName").value);
+                formData.append("GioiTinh", document.getElementById("newStudentGender").value);
+                formData.append("SoDienThoai", document.getElementById("newStudentPhone").value);
+                formData.append("Khoa", document.getElementById("newStudentCourse").value);
+                formData.append("Lop", document.getElementById("newStudentClass").value);
+
+                const response = await fetch(createStudentUrl, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    alert(result.message ?? "Không thể thêm sinh viên.");
+                    return;
+                }
+
+                setStudent(result);
+                document.getElementById("newStudentCode").value = result.nextCode ?? "";
+                document.getElementById("newStudentName").value = "";
+                document.getElementById("newStudentPhone").value = "";
+                document.getElementById("newStudentCourse").value = "";
+                document.getElementById("newStudentClass").value = "";
+                hideModal("studentInfoModal");
+            });
+
+            const tableBody = document.querySelector("#borrowBooksTable tbody");
+            const emptyMessage = document.getElementById("emptyBookMessage");
+
+            const updateEmptyMessage = () => {
+                emptyMessage.classList.toggle("d-none", tableBody.querySelectorAll("[data-book-row]").length > 0);
+            };
+
+            const reindexRows = () => {
+                [...tableBody.querySelectorAll("[data-book-row]")].forEach((row, index) => {
+                    row.querySelector(".book-code-input").name = `DanhSachSach[${index}].MaSach`;
+                    row.querySelector("input[name$='.GhiChu']").name = `DanhSachSach[${index}].GhiChu`;
+                });
+            };
+
+            const previewBook = book => {
+                document.getElementById("bookCodePreview").value = book.code ?? "";
+                document.getElementById("bookNamePreview").value = book.name ?? "";
+                document.getElementById("bookCategoryPreview").value = book.category ?? "";
+                document.getElementById("bookAuthorPreview").value = book.author ?? "";
+                document.getElementById("bookPublisherPreview").value = book.publisher ?? "";
+            };
+
+            const addBook = book => {
+                if ([...tableBody.querySelectorAll("[data-book-row]")].some(row => row.dataset.bookCode === book.code)) {
+                    alert("Sách này đã có trong danh sách mượn.");
+                    previewBook(book);
+                    return;
+                }
+
+                const index = tableBody.querySelectorAll("[data-book-row]").length;
+                const row = document.createElement("tr");
+                row.dataset.bookRow = "true";
+                row.dataset.bookCode = book.code;
+                row.innerHTML = `
+                    <td class="text-center"><input type="checkbox" /></td>
+                    <td class="fw-semibold">
+                        <input type="hidden" name="DanhSachSach[${index}].MaSach" value="${escapeHtml(book.code)}" class="book-code-input" />
+                        <span class="book-code-label">${escapeHtml(book.code)}</span>
+                    </td>
+                    <td class="book-name-cell">${escapeHtml(book.name)}</td>
+                    <td class="book-category-cell">${escapeHtml(book.category)}</td>
+                    <td class="book-author-cell">${escapeHtml(book.author)}</td>
+                    <td class="book-publisher-cell">${escapeHtml(book.publisher)}</td>
+                    <td><input name="DanhSachSach[${index}].GhiChu" class="form-control form-control-sm" maxlength="255" /></td>
+                    <td class="text-end">
+                        <button type="button" class="icon-action danger remove-book-row" title="Xóa sách">
+                            <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+                previewBook(book);
+                updateEmptyMessage();
+            };
+
+            document.querySelectorAll(".pick-book").forEach(button => {
+                button.addEventListener("click", () => {
+                    addBook({
+                        code: button.dataset.code,
+                        name: button.dataset.name,
+                        category: button.dataset.category,
+                        author: button.dataset.author,
+                        publisher: button.dataset.publisher
+                    });
+                    hideModal("bookSearchModal");
+                });
+            });
+
+            tableBody.addEventListener("click", event => {
+                const removeButton = event.target.closest(".remove-book-row");
+                if (!removeButton) {
+                    return;
+                }
+
+                removeButton.closest("[data-book-row]").remove();
+                reindexRows();
+                updateEmptyMessage();
+            });
+
+            document.getElementById("clearBookRows")?.addEventListener("click", () => {
+                if (!tableBody.querySelector("[data-book-row]")) {
+                    return;
+                }
+
+                if (confirm("Xóa toàn bộ sách trong phiếu đang lập?")) {
+                    tableBody.innerHTML = "";
+                    updateEmptyMessage();
+                }
+            });
+
+            document.querySelectorAll(".modal-search-input").forEach(input => {
+                input.addEventListener("input", () => {
+                    const table = document.getElementById(input.dataset.filterTable);
+                    const keyword = input.value.trim().toLowerCase();
+                    table.querySelectorAll("tbody tr").forEach(row => {
+                        const text = (row.dataset.search ?? row.innerText).toLowerCase();
+                        row.classList.toggle("d-none", keyword && !text.includes(keyword));
+                    });
+                });
+            });
+
+            document.getElementById("printDraftButton")?.addEventListener("click", () => {
+                window.print();
+            });
+
+            updateEmptyMessage();
+        })();
+    </script>
+}

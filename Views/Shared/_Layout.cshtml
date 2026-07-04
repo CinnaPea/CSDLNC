@@ -11,6 +11,9 @@
     var canLiquidate = User.HasClaim("Permission", "Q007");
     var canDestroy = User.HasClaim("Permission", "Q008");
     var canReport = User.HasClaim("Permission", "Q009");
+    var canPhucBorrow = canAdmin || canBorrow;
+    var canPhucReturn = canAdmin || canReturn;
+    var canPhucReport = canAdmin || canReport;
 }
 
 <!DOCTYPE html>
@@ -90,7 +93,7 @@
                                 </li>
                             }
 
-                            @if (canCatalog || canBorrow || canReturn || canFine)
+                            @if (canCatalog || canPhucBorrow || canPhucReturn || canFine)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
@@ -107,17 +110,17 @@
                                     </li>
                                 }
 
-                                @if (canBorrow)
+                                @if (canPhucBorrow)
                                 {
                                     <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="PhieuMuon" asp-action="Create">
+                                        <a class="sidebar-link" asp-controller="PhieuMuon" asp-action="Index">
                                             <iconify-icon icon="solar:document-add-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Lập phiếu mượn</span>
+                                            <span class="hide-menu">Phiếu mượn trả sách</span>
                                         </a>
                                     </li>
                                 }
 
-                                @if (canReturn)
+                                @if (canPhucReturn)
                                 {
                                     <li class="sidebar-item">
                                         <a class="sidebar-link" asp-controller="TraSach" asp-action="Index">
@@ -176,7 +179,7 @@
                                 }
                             }
 
-                            @if (canReport)
+                            @if (canPhucReport)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
@@ -184,9 +187,9 @@
                                 </li>
 
                                 <li class="sidebar-item">
-                                    <a class="sidebar-link" asp-controller="BaoCao" asp-action="Index">
+                                    <a class="sidebar-link" asp-controller="ThongKeViPhamMuonTra" asp-action="Index">
                                         <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
-                                        <span class="hide-menu">Thống kê báo cáo</span>
+                                        <span class="hide-menu">Vi phạm mượn trả sách</span>
                                     </a>
                                 </li>
                             }

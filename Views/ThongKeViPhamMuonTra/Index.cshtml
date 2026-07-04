@@ -1,0 +1,162 @@
+@model ThongKeViPhamMuonTraViewModel
+
+@{
+    ViewData["Title"] = "Thống kê vi phạm mượn trả";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/phuc-workflows.css" asp-append-version="true" />
+}
+
+<div class="container-fluid workflow-shell borrow-page">
+    <div class="borrow-titlebar no-print">
+        <a asp-controller="Home" asp-action="Index" class="borrow-back" title="Quay lại dashboard">
+            <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+        </a>
+        <div>
+            <div class="borrow-eyebrow">Báo cáo thống kê</div>
+            <h1>Thống kê vi phạm mượn trả</h1>
+        </div>
+    </div>
+
+    <form asp-action="Index" method="get" class="borrow-form-section no-print">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-2">
+                <label asp-for="Thang" class="form-label">Tháng</label>
+                <input asp-for="Thang" type="number" min="1" max="12" class="form-control" />
+                <span asp-validation-for="Thang" class="text-danger"></span>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Nam" class="form-label">Năm</label>
+                <input asp-for="Nam" type="number" min="2000" max="2100" class="form-control" />
+                <span asp-validation-for="Nam" class="text-danger"></span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="LoaiViPham" class="form-label">Loại vi phạm</label>
+                <select asp-for="LoaiViPham" class="form-select">
+                    <option value="Tất cả">Tất cả</option>
+                    <option value="Quá hạn">Quá hạn</option>
+                    <option value="Hỏng/Mất">Hỏng/Mất</option>
+                </select>
+            </div>
+            <div class="col-md-auto">
+                <button type="submit" class="btn btn-primary">Thống kê</button>
+            </div>
+            <div class="col-md-auto">
+                <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                    <iconify-icon icon="solar:printer-2-line-duotone"></iconify-icon>
+                    In mẫu biểu
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <section class="borrow-board no-print">
+        <div class="borrow-board-header">
+            <h2>Kết quả thống kê</h2>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table borrow-table align-middle">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 60px;">STT</th>
+                        <th>Mã độc giả</th>
+                        <th>Họ tên</th>
+                        <th>Loại vi phạm</th>
+                        <th>Mức độ</th>
+                        <th>Hình thức xử lý</th>
+                        <th>Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.KetQua.Any())
+                    {
+                        @for (var i = 0; i < Model.KetQua.Count; i++)
+                        {
+                            var item = Model.KetQua[i];
+                            <tr>
+                                <td class="text-center">@(i + 1)</td>
+                                <td class="fw-semibold">@item.MaSinhVien</td>
+                                <td>@item.HoTen</td>
+                                <td>@item.LoaiViPham</td>
+                                <td>@item.MucDoViPham</td>
+                                <td>@item.HinhThucXuLy</td>
+                                <td>@item.GhiChu</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">Không có dữ liệu</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="mb-sheet violation-mb-sheet print-only">
+        <div class="mb-topline">
+            <strong>THƯ VIỆN ĐẠI HỌC X</strong>
+            <strong>Số phiếu: ...........</strong>
+        </div>
+
+        <h2>THỐNG KÊ VI PHẠM MƯỢN TRẢ SÁCH THÁNG @Model.Thang</h2>
+
+        <table class="mb-table violation-mb-table">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã độc giả</th>
+                    <th>Họ và tên</th>
+                    <th>Loại vi phạm</th>
+                    <th>Mức độ vi phạm</th>
+                    <th>Hình thức xử lý</th>
+                    <th>Ghi chú</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.KetQua.Any())
+                {
+                    @for (var i = 0; i < Model.KetQua.Count; i++)
+                    {
+                        var item = Model.KetQua[i];
+                        <tr>
+                            <td class="text-center">@(i + 1)</td>
+                            <td>@item.MaSinhVien</td>
+                            <td>@item.HoTen</td>
+                            <td>@item.LoaiViPham</td>
+                            <td>@item.MucDoViPham</td>
+                            <td>@item.HinhThucXuLy</td>
+                            <td>@item.GhiChu</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td class="text-center">&nbsp;</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="mb-date-sign">Ngày ..... tháng ..... năm .....</div>
+        <div class="mb-signatures">
+            <strong>Người thống kê</strong>
+            <strong>Quản lý thư viện</strong>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
