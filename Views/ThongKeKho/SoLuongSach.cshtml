@@ -1,0 +1,170 @@
+﻿@model CSDLNC.Models.ThongKeSoLuongSachViewModel
+
+@{
+    ViewData["Title"] = "Thống kê số lượng sách";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
+
+<div class="kho-dashboard">
+    <div class="page-heading">
+        <div>
+            <h2>Thống kê kho sách</h2>
+            <p>Theo dõi số lượng sách theo đầu sách và thể loại</p>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-stretch">
+        <div class="col-lg-8">
+            <div class="panel-card w-100 h-100">
+                <h5>Thông tin lọc / hiển thị</h5>
+
+                <form asp-action="SoLuongSach" method="get" class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Từ khóa</label>
+                        <input name="tuKhoa"
+                               value="@Model.TuKhoa"
+                               class="form-control"
+                               placeholder="Tên sách, tác giả, mã đầu sách" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Thể loại</label>
+                        <select name="theLoai" class="form-select">
+                            <option value="">Tất cả</option>
+                            @foreach (var item in Model.DanhSachTheLoai)
+                            {
+                                <option value="@item" selected="@(item == Model.TheLoai)">
+                                    @item
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button class="btn btn-filter-primary flex-fill" type="submit">
+                            Thống kê
+                        </button>
+
+                        <a class="btn btn-filter-secondary flex-fill" asp-action="SoLuongSach">
+                            Xóa lọc
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="panel-card">
+                <h5>Tổng hợp</h5>
+                <div class="summary-line"><span>Tổng đầu sách</span><b>@Model.TongDauSach</b></div>
+                <div class="summary-line"><span>Tổng bản</span><b>@Model.TongBan</b></div>
+                <div class="summary-line"><span>Có thể mượn</span><b>@Model.TongHienCo</b></div>
+                <div class="summary-line"><span>Đang mượn</span><b>@Model.TongDangMuon</b></div>
+                <div class="summary-line"><span>Hỏng/mất</span><b>@Model.TongHongMat</b></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <span>Tổng đầu sách</span>
+                <strong>@Model.TongDauSach</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <span>Tổng bản sách</span>
+                <strong>@Model.TongBan</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card success">
+                <span>Hiện có</span>
+                <strong>@Model.TongHienCo</strong>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card warning">
+                <span>Đang mượn</span>
+                <strong>@Model.TongDangMuon</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card mb-3">
+        <h4 class="mb-3">Thống kê số lượng sách theo đầu sách/thể loại</h4>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã đầu sách</th>
+                        <th>Tên đầu sách</th>
+                        <th>Thể loại</th>
+                        <th>Tác giả</th>
+                        <th class="text-end">Tổng số lượng</th>
+                        <th class="text-end">Hiện có</th>
+                        <th class="text-end">Đang mượn</th>
+                        <th class="text-end">Hỏng/mất</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Rows.Any())
+                    {
+                        foreach (var item in Model.Rows)
+                        {
+                            <tr>
+                                <td>@item.MaDauSach</td>
+                                <td>@item.TenDauSach</td>
+                                <td>@item.TheLoai</td>
+                                <td>@item.TacGia</td>
+                                <td class="text-end">@item.TongSoLuong</td>
+                                <td class="text-end text-success">@item.SoLuongHienCo</td>
+                                <td class="text-end text-warning">@item.SoLuongDangMuon</td>
+                                <td class="text-end text-danger">@item.SoLuongHongMat</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">
+                                Không có dữ liệu phù hợp.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <h5>Phân bổ theo thể loại</h5>
+
+        @if (Model.TheLoaiRows.Any())
+        {
+            foreach (var item in Model.TheLoaiRows)
+            {
+                var percent = Model.TongBan == 0 ? 0 : item.TongBan * 100 / Model.TongBan;
+
+                <div class="category-row">
+                    <div class="d-flex justify-content-between">
+                        <span>@item.TheLoai</span>
+                        <span>@item.TongBan bản</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width:@percent%"></div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-muted">Không có dữ liệu thể loại.</div>
+        }
+    </div>
+</div>

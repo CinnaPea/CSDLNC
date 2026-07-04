@@ -1,0 +1,190 @@
+﻿@model CSDLNC.Models.BanGiaoCreateViewModel
+
+@{
+    ViewData["Title"] = "Lập biên bản nhận bàn giao sách";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
+
+<div class="kho-page">
+    <div class="kho-title">
+        <h3>Lập biên bản nhận bàn giao sách</h3>
+        <p>Ghi nhận sách được bàn giao từ nhà cung cấp và cập nhật số lượng đầu sách.</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3 mb-3 align-items-stretch">
+            <div class="col-lg-8 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Thông tin nhập / hiển thị</h5>
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="Sobienban" class="form-label">Số biên bản</label>
+                            <input asp-for="Sobienban" class="form-control bg-light" readonly />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Manhacungcap" class="form-label">Nhà cung cấp</label>
+                            <select asp-for="Manhacungcap" asp-items="Model.NhaCungCapOptions" class="form-select">
+                                <option value="">-- Chọn NCC --</option>
+                            </select>
+                            <span asp-validation-for="Manhacungcap" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Madausach" class="form-label">Đầu sách</label>
+                            <select asp-for="Madausach" asp-items="Model.DauSachOptions" class="form-select">
+                                <option value="">-- Chọn đầu sách --</option>
+                            </select>
+                            <span asp-validation-for="Madausach" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Soluongsachmoidausach" class="form-label">Số lượng</label>
+                            <input asp-for="Soluongsachmoidausach" type="number" min="1" class="form-control" />
+                            <span asp-validation-for="Soluongsachmoidausach" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DaidienbenbangiaoId" class="form-label">Đại diện bên bàn giao</label>
+                            <select asp-for="DaidienbenbangiaoId" class="form-select person-select" data-target="#Chucvubenbangiao">
+                                <option value="">-- Chọn nhân sự --</option>
+                                @foreach (var item in Model.NhanSuOptions)
+                                {
+                                    <option value="@item.MaNguoiDung" data-chucvu="@item.ChucVu">
+                                        @item.TenNguoiDung
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Chucvubenbangiao" class="form-label">Chức vụ bên bàn giao</label>
+                            <input asp-for="Chucvubenbangiao" id="Chucvubenbangiao" class="form-control bg-light" readonly />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="DaidienbennhanId" class="form-label">Đại diện bên nhận</label>
+                            <select asp-for="DaidienbennhanId" class="form-select person-select" data-target="#Chucvubennhan">
+                                <option value="">-- Chọn nhân sự --</option>
+                                @foreach (var item in Model.NhanSuOptions)
+                                {
+                                    <option value="@item.MaNguoiDung" data-chucvu="@item.ChucVu">
+                                        @item.TenNguoiDung
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Chucvubennhan" class="form-label">Chức vụ bên nhận</label>
+                            <input asp-for="Chucvubennhan" id="Chucvubennhan" class="form-control bg-light" readonly />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Ghichu" class="form-label">Ghi chú</label>
+                            <input asp-for="Ghichu" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Chức năng</h5>
+
+                    <div class="d-flex gap-2 mb-2">
+                        <button type="submit" class="btn btn-filter-primary flex-fill">
+                            Lập biên bản
+                        </button>
+
+                        <a asp-action="Create" class="btn btn-filter-secondary flex-fill">
+                            Làm mới
+                        </a>
+                    </div>
+
+                    <div class="summary-line">
+                        <span>Tổng biên bản</span>
+                        <b>@Model.BienBans.Count</b>
+                    </div>
+
+                    <small class="text-muted d-block mt-3">
+                        Khi lập biên bản, hệ thống thêm phiếu chính, chi tiết và cập nhật số lượng đầu sách.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="panel-card">
+        <h4 class="mb-3">Danh sách biên bản nhận bàn giao</h4>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle kho-table">
+                <thead>
+                    <tr>
+                        <th>Số biên bản</th>
+                        <th>Ngày lập</th>
+                        <th>Mã NCC</th>
+                        <th>Tên nhà cung cấp</th>
+                        <th class="text-end">Tổng đầu sách</th>
+                        <th class="text-end">Tổng số lượng</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.BienBans.Any())
+                    {
+                        foreach (var item in Model.BienBans)
+                        {
+                            <tr>
+                                <td>@item.Sobienban</td>
+                                <td>@item.Ngaylap</td>
+                                <td>@item.Manhacungcap</td>
+                                <td>@item.Tennhacungcap</td>
+                                <td class="text-end">@item.Tongsodausach</td>
+                                <td class="text-end">@item.Tongsoluongsach</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                Chưa có biên bản nhận bàn giao.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll(".person-select").forEach(select => {
+            select.addEventListener("change", function () {
+                const selected = this.options[this.selectedIndex];
+                const target = document.querySelector(this.dataset.target);
+
+                if (target) {
+                    target.value = selected.dataset.chucvu || "";
+                }
+            });
+        });
+    </script>
+}

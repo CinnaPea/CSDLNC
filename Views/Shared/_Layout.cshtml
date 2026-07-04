@@ -138,42 +138,33 @@
                                 }
                             }
 
-                            @if (canInventory || canLiquidate || canDestroy)
+                            @if (canInventory)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
                                     <span class="hide-menu">Kho và kiểm kê</span>
                                 </li>
 
-                                @if (canInventory)
-                                {
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="KiemKe" asp-action="Index">
-                                            <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Kiểm kê sách</span>
-                                        </a>
-                                    </li>
-                                }
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="BanGiao" asp-action="Create">
+                                        <iconify-icon icon="solar:inbox-in-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Nhận bàn giao sách</span>
+                                    </a>
+                                </li>
 
-                                @if (canLiquidate)
-                                {
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="ThanhLy" asp-action="Index">
-                                            <iconify-icon icon="solar:archive-down-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Thanh lý sách</span>
-                                        </a>
-                                    </li>
-                                }
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="KiemKe" asp-action="Create">
+                                        <iconify-icon icon="solar:checklist-minimalistic-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Kiểm kê sách</span>
+                                    </a>
+                                </li>
 
-                                @if (canDestroy)
-                                {
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="HuySach" asp-action="Index">
-                                            <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Hủy sách</span>
-                                        </a>
-                                    </li>
-                                }
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="ThongKeKho" asp-action="SoLuongSach">
+                                        <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Thống kê số lượng sách</span>
+                                    </a>
+                                </li>
                             }
 
                             @if (canReport)

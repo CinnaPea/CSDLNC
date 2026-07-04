@@ -1,0 +1,152 @@
+﻿@model CSDLNC.Models.KiemKeCreateViewModel
+
+@{
+    ViewData["Title"] = "Lập phiếu kiểm kê sách";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
+
+<div class="kho-page">
+    <div class="kho-title">
+        <h3>Lập phiếu kiểm kê sách</h3>
+        <p>Chọn sách trong bảng, ghi nhận tình trạng thực tế và lưu phiếu kiểm kê.</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3 mb-3 align-items-stretch">
+            <div class="col-lg-8 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Thông tin nhập / hiển thị</h5>
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="Makiemke" class="form-label">Mã kiểm kê</label>
+                            <input asp-for="Makiemke" class="form-control bg-light" readonly />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Masach" class="form-label">Mã sách</label>
+                            <input asp-for="Masach" class="form-control bg-light" readonly />
+                            <span asp-validation-for="Masach" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Tensach" class="form-label">Tên sách</label>
+                            <input asp-for="Tensach" class="form-control bg-light" readonly />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label asp-for="Tinhtrang" class="form-label">Tình trạng</label>
+                            <select asp-for="Tinhtrang" asp-items="Model.TinhTrangOptions" class="form-select">
+                                <option value="">-- Chọn tình trạng --</option>
+                            </select>
+                            <span asp-validation-for="Tinhtrang" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label asp-for="Ghichu" class="form-label">Ghi chú</label>
+                            <input asp-for="Ghichu" class="form-control" placeholder="Nhập ghi chú nếu có" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 d-flex">
+                <div class="panel-card w-100 h-100">
+                    <h5>Chức năng</h5>
+
+                    <div class="d-flex gap-2 mb-2">
+                        <button type="submit" class="btn btn-filter-primary flex-fill">
+                            Ghi kiểm kê
+                        </button>
+
+                        <a asp-action="Create" class="btn btn-filter-secondary flex-fill">
+                            Tải lại
+                        </a>
+                    </div>
+
+                    <div class="summary-line">
+                        <span>Tổng số sách</span>
+                        <b>@Model.Saches.Count</b>
+                    </div>
+
+                    <small class="text-muted d-block mt-3">
+                        Chọn một sách trong bảng dưới để đưa thông tin lên form kiểm kê.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="panel-card">
+        <h4 class="mb-3">Danh sách sách trong kho</h4>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle kho-table">
+                <thead>
+                    <tr>
+                        <th>Mã sách</th>
+                        <th>Tên sách</th>
+                        <th>Thể loại</th>
+                        <th>Tác giả</th>
+                        <th>Năm xuất bản</th>
+                        <th>Tình trạng</th>
+                        <th>Trạng thái</th>
+                        <th>Mã đầu sách</th>
+                        <th>Vị trí</th>
+                        <th class="text-end">Chọn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Saches.Any())
+                    {
+                        foreach (var item in Model.Saches)
+                        {
+                            var isSelected = item.Masach == Model.Masach;
+
+                            <tr class="@(isSelected ? "selected-row" : "")">
+                                <td>@item.Masach</td>
+                                <td>@item.Tensach</td>
+                                <td>@item.Theloai</td>
+                                <td>@item.Tacgia</td>
+                                <td>@item.Namxuatban</td>
+                                <td>@item.Tinhtrang</td>
+                                <td>@item.Trangthai</td>
+                                <td>@item.Madausach</td>
+                                <td>@item.Mavitri</td>
+                                <td class="text-end">
+                                    <a asp-action="Create"
+                                       asp-route-masach="@item.Masach"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Chọn
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">
+                                Không có dữ liệu sách.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
