@@ -22,6 +22,7 @@
                 @Html.AntiForgeryToken()
 
                 <input asp-for="SoPhieuPhatQuaHan" type="hidden" />
+                <input asp-for="SoPhieuMuonTra" type="hidden" />
 
                 <div class="row mb-4">
                     <div class="col-md-4">
@@ -92,28 +93,20 @@
                                 <td class="stt">@(i + 1)</td>
 
                                 <td>
-                                    <div class="combo-box sach-combo">
-                                        <input name="DanhSachChiTiet[@i].MaSach"
-                                               value="@Model.DanhSachChiTiet[i].MaSach"
-                                               class="form-control input-ma-sach"
-                                               autocomplete="off"
-                                               placeholder="Nhập hoặc chọn mã sách"
-                                               oninput="locSach(this)"
-                                               onclick="hienDanhSachSach(this)" />
-
-                                        <div class="combo-list sach-list">
-                                            @foreach (var sach in dsSach)
+                                    <select name="DanhSachChiTiet[@i].MaSach" class="form-select select-ma-sach">
+                                        <option value="">-- Chọn sách --</option>
+                                        @foreach (var sach in dsSach)
+                                        {
+                                            if (Model.DanhSachChiTiet[i].MaSach == sach.MaSach)
                                             {
-                                                <div class="combo-item"
-                                                     data-ma="@sach.MaSach"
-                                                     data-ten="@sach.TenSach"
-                                                     onclick="chonSach(this)">
-                                                    <span class="combo-code">@sach.MaSach</span>
-                                                    <span class="combo-name"> - @sach.TenSach</span>
-                                                </div>
+                                                <option value="@sach.MaSach" selected>@sach.MaSach - @sach.TenSach</option>
                                             }
-                                        </div>
-                                    </div>
+                                            else
+                                            {
+                                                <option value="@sach.MaSach">@sach.MaSach - @sach.TenSach</option>
+                                            }
+                                        }
+                                    </select>
                                 </td>
 
                                 <td>
@@ -129,6 +122,14 @@
                 <button type="button" class="btn btn-success mb-3" onclick="themDongSach()">
                     + Thêm sách
                 </button>
+
+                <template id="mauLuaChonSach">
+                    <option value="">-- Chọn sách --</option>
+                    @foreach (var sach in dsSach)
+                    {
+                        <option value="@sach.MaSach">@sach.MaSach - @sach.TenSach</option>
+                    }
+                </template>
 
                 <br />
 
@@ -274,7 +275,7 @@
             rows.forEach(function (row, index) {
                 row.querySelector(".stt").innerText = index + 1;
 
-                row.querySelectorAll("input").forEach(function (input) {
+                row.querySelectorAll("input, select").forEach(function (input) {
                     input.name = input.name.replace(/DanhSachChiTiet\[\d+\]/, "DanhSachChiTiet[" + index + "]");
                 });
             });
@@ -290,27 +291,9 @@
                 <td class="stt">${index + 1}</td>
 
                 <td>
-                    <div class="combo-box sach-combo">
-                        <input name="DanhSachChiTiet[${index}].MaSach"
-                               class="form-control input-ma-sach"
-                               autocomplete="off"
-                               placeholder="Nhập hoặc chọn mã sách"
-                               oninput="locSach(this)"
-                               onclick="hienDanhSachSach(this)" />
-
-                        <div class="combo-list sach-list">
-        @foreach (var sach in dsSach)
-        {
-                                    <div class="combo-item"
-                                         data-ma="@sach.MaSach"
-                                         data-ten="@sach.TenSach"
-                                         onclick="chonSach(this)">
-                                        <span class="combo-code">@sach.MaSach</span>
-                                        <span class="combo-name"> - @sach.TenSach</span>
-                                    </div>
-        }
-                        </div>
-                    </div>
+                    <select name="DanhSachChiTiet[${index}].MaSach" class="form-select select-ma-sach">
+                        ${document.getElementById("mauLuaChonSach").innerHTML}
+                    </select>
                 </td>
 
                 <td>

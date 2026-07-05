@@ -46,6 +46,7 @@ namespace CSDLNC.Controllers
             var claims = new List<Claim>
         {
             new Claim(ClaimTypes.NameIdentifier, user.Manguoidung),
+            new Claim("MaNguoiDung", user.Manguoidung),
             new Claim(ClaimTypes.Name, user.Tennguoidung ?? user.Tendangnhap),
             new Claim("TenDangNhap", user.Tendangnhap)
         };

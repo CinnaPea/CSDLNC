@@ -22,7 +22,9 @@ namespace CSDLNC.Controllers
                 return Forbid();
             }
 
-            var query = _db.DauSaches.AsQueryable();
+            var query = _db.DauSaches
+                .Include(x => x.Saches)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -43,10 +45,10 @@ namespace CSDLNC.Controllers
                     TenDauSach = x.Tendausach,
                     TheLoai = x.Theloai,
                     TacGia = x.Tacgia,
-                    TongSoLuong = (int?)x.Soluong ?? 0,
-                    SoLuongHienCo = (int?)x.Soluonghienco ?? 0,
-                    SoLuongDangMuon = (int?)x.Soluongdangmuon ?? 0,
-                    SoLuongHongMat = (int?)x.Soluonghongmat ?? 0
+                    TongSoLuong = x.Saches.Count,
+                    SoLuongHienCo = x.Saches.Count(s => s.Tinhtrang == "Có thể mượn"),
+                    SoLuongDangMuon = x.Saches.Count(s => s.Tinhtrang == "Đang mượn"),
+                    SoLuongHongMat = x.Saches.Count(s => s.Tinhtrang == "Hỏng" || s.Tinhtrang == "Mất")
                 }).ToListAsync();
 
             var danhSachTheLoai = await _db.DauSaches.Where(x => x.Theloai != null && x.Theloai != "").Select(x => x.Theloai!).Distinct().OrderBy(x => x).ToListAsync();

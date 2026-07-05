@@ -215,5 +215,7 @@ namespace CSDLNC.Models
         public string? MaSach { get; set; }
 
         public string? TenSach { get; set; }
+
+        public string? SoPhieuMuon { get; set; }
     }
 }

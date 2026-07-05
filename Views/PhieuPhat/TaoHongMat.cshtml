@@ -28,7 +28,7 @@
                            class="form-control"
                            autocomplete="off"
                            placeholder="Nhập hoặc chọn số phiếu mượn"
-                           oninput="locPhieuMuon()"
+                           oninput="locPhieuMuon(); capNhatLuaChonSachTheoPhieu()"
                            onclick="hienDanhSachPhieuMuon()" />
 
                     <div id="danhSachGoiYPhieuMuon" class="combo-list">
@@ -64,28 +64,24 @@
                                     <td class="stt">@(i + 1)</td>
 
                                 <td>
-                                    <div class="combo-box sach-combo">
-                                        <input name="DanhSachSach[@i].MaSach"
-                                               value="@Model.DanhSachSach[i].MaSach"
-                                               class="form-control input-ma-sach"
-                                               autocomplete="off"
-                                               placeholder="Nhập hoặc chọn mã sách"
-                                               oninput="locSach(this)"
-                                               onclick="hienDanhSachSach(this)" />
-
-                                        <div class="combo-list sach-list">
-                                            @foreach (var sach in dsSach)
+                                    <select name="DanhSachSach[@i].MaSach" class="form-select select-ma-sach">
+                                        <option value="">-- Chọn sách --</option>
+                                        @foreach (var sach in dsSach)
+                                        {
+                                            if (Model.DanhSachSach[i].MaSach == sach.MaSach)
                                             {
-                                                <div class="combo-item"
-                                                     data-ma="@sach.MaSach"
-                                                     data-ten="@sach.TenSach"
-                                                     onclick="chonSach(this)">
-                                                    <span class="combo-code">@sach.MaSach</span>
-                                                    <span class="combo-name"> - @sach.TenSach</span>
-                                                </div>
+                                                <option value="@sach.MaSach" data-phieu="@sach.SoPhieuMuon" selected>
+                                                    @sach.MaSach - @sach.TenSach
+                                                </option>
                                             }
-                                        </div>
-                                    </div>
+                                            else
+                                            {
+                                                <option value="@sach.MaSach" data-phieu="@sach.SoPhieuMuon">
+                                                    @sach.MaSach - @sach.TenSach
+                                                </option>
+                                            }
+                                        }
+                                    </select>
                                 </td>
 
                                     <td>
@@ -131,6 +127,16 @@
                 <button type="button" class="btn btn-success mb-3" onclick="themDongSach()">
                     + Thêm sách
                 </button>
+
+                <template id="mauLuaChonSach">
+                    <option value="">-- Chọn sách --</option>
+                    @foreach (var sach in dsSach)
+                    {
+                        <option value="@sach.MaSach" data-phieu="@sach.SoPhieuMuon">
+                            @sach.MaSach - @sach.TenSach
+                        </option>
+                    }
+                </template>
 
                 <br />
 
@@ -240,6 +246,7 @@
         function chonPhieuMuon(value) {
             document.getElementById("SoPhieuMuonTra").value = value;
             document.getElementById("danhSachGoiYPhieuMuon").style.display = "none";
+            capNhatLuaChonSachTheoPhieu();
         }
 
                 document.addEventListener("click", function (event) {
@@ -265,6 +272,31 @@
             });
         }
 
+        function capNhatLuaChonSachTheoPhieu() {
+            const soPhieu = document.getElementById("SoPhieuMuonTra").value.trim();
+
+            document.querySelectorAll(".select-ma-sach").forEach(function (select) {
+                const selectedOption = select.selectedOptions[0];
+                const selectedPhieu = selectedOption ? selectedOption.dataset.phieu : "";
+
+                select.querySelectorAll("option").forEach(function (option) {
+                    if (!option.value) {
+                        option.hidden = false;
+                        option.disabled = false;
+                        return;
+                    }
+
+                    const belongsToLoan = !soPhieu || option.dataset.phieu === soPhieu;
+                    option.hidden = !belongsToLoan;
+                    option.disabled = !belongsToLoan;
+                });
+
+                if (select.value && soPhieu && selectedPhieu !== soPhieu) {
+                    select.value = "";
+                }
+            });
+        }
+
         function themDongSach() {
             const tbody = document.querySelector("#bangSachPhat tbody");
             const index = tbody.querySelectorAll("tr").length;
@@ -275,9 +307,9 @@
                 <td class="stt">${index + 1}</td>
 
                 <td>
-                    <input name="DanhSachSach[${index}].MaSach"
-                           class="form-control"
-                           placeholder="Ví dụ: S005" />
+                    <select name="DanhSachSach[${index}].MaSach" class="form-select select-ma-sach">
+                        ${document.getElementById("mauLuaChonSach").innerHTML}
+                    </select>
                 </td>
 
                 <td>
@@ -309,6 +341,7 @@
             `;
 
             tbody.appendChild(row);
+            capNhatLuaChonSachTheoPhieu();
         }
 
         function xoaDong(button) {
@@ -362,5 +395,7 @@
             input.value = item.dataset.ma;
             combo.querySelector(".sach-list").style.display = "none";
         }
+
+        document.addEventListener("DOMContentLoaded", capNhatLuaChonSachTheoPhieu);
     </script>
 }

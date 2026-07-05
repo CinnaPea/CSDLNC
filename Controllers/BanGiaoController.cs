@@ -102,6 +102,25 @@ public class BanGiaoController : Controller
             Ghichu = model.Ghichu
         };
 
+        var nextSachNumber = await GetNextSachNumberAsync();
+        for (var i = 0; i < model.Soluongsachmoidausach; i++)
+        {
+            _db.Saches.Add(new Sach
+            {
+                Masach = "S" + (nextSachNumber + i).ToString("000"),
+                Madausach = dauSach!.Madausach,
+                Tensach = dauSach.Tendausach,
+                Theloai = dauSach.Theloai,
+                Tacgia = dauSach.Tacgia,
+                Nhaxuatban = dauSach.Manhaxuatban,
+                Namxuatban = dauSach.Namxuatban,
+                Tinhtrang = "Có thể mượn",
+                Trangthai = "Trong kho",
+                Ngaynhap = DateOnly.FromDateTime(DateTime.Today),
+                Ngaycapnhattrangthai = DateOnly.FromDateTime(DateTime.Today)
+            });
+        }
+
         dauSach!.Soluong += model.Soluongsachmoidausach;
         dauSach.Soluonghienco += model.Soluongsachmoidausach;
 
@@ -176,5 +195,15 @@ public class BanGiaoController : Controller
             .CountAsync(x => x.Sobienban.StartsWith(prefix));
 
         return prefix + (countToday + 1).ToString("00");
+    }
+
+    private async Task<int> GetNextSachNumberAsync()
+    {
+        var maSaches = await _db.Saches.Select(x => x.Masach).ToListAsync();
+
+        return maSaches
+            .Select(x => x.StartsWith("S", StringComparison.OrdinalIgnoreCase) && int.TryParse(x[1..], out var n) ? n : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
     }
 }

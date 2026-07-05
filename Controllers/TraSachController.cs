@@ -3,6 +3,7 @@ using CSDLNC.Data;
 using CSDLNC.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,7 @@ public class TraSachController : Controller
             SoPhieuMuon = soPhieuMuon,
             PhieuMuonCanTra = await LayPhieuMuonCanTraAsync()
         };
+        model.PhieuMuonOptions = BuildPhieuMuonOptions(model.PhieuMuonCanTra, soPhieuMuon);
 
         if (!string.IsNullOrWhiteSpace(soPhieuMuon))
         {
@@ -46,7 +48,6 @@ public class TraSachController : Controller
         return await _db.PhieuMuons
             .Where(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null))
             .OrderBy(x => x.Sophieumuon)
-            .Take(8)
             .Select(x => new PhieuMuonCanTraViewModel
             {
                 SoPhieuMuon = x.Sophieumuon,
@@ -57,6 +58,20 @@ public class TraSachController : Controller
                 SoSachChuaTra = x.CtPhieuMuons.Count(ct => ct.Ngaytra == null)
             })
             .ToListAsync();
+    }
+
+    private static List<SelectListItem> BuildPhieuMuonOptions(
+        IEnumerable<PhieuMuonCanTraViewModel> phieuMuons,
+        string? selectedSoPhieuMuon)
+    {
+        return phieuMuons
+            .Select(x => new SelectListItem
+            {
+                Value = x.SoPhieuMuon,
+                Text = $"{x.SoPhieuMuon} - {x.MaSinhVien} - {x.HoTen} ({x.SoSachChuaTra} chưa trả)",
+                Selected = x.SoPhieuMuon == selectedSoPhieuMuon
+            })
+            .ToList();
     }
 
     [HttpPost]
@@ -82,7 +97,10 @@ public class TraSachController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
 
-        return RedirectToAction(nameof(Index), new { soPhieuMuon = model.SoPhieuMuon });
+        var stillHasOpenBooks = await _db.CtPhieuMuons
+            .AnyAsync(x => x.Sophieumuon == model.SoPhieuMuon && x.Ngaytra == null);
+
+        return RedirectToAction(nameof(Index), stillHasOpenBooks ? new { soPhieuMuon = model.SoPhieuMuon } : null);
     }
 
     private async Task<List<ChiTietPhieuMuonViewModel>> LayChiTietPhieuMuonAsync(string soPhieuMuon)

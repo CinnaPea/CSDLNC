@@ -38,10 +38,12 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-8">
                         <label for="soPhieuMuon" class="form-label">Số phiếu mượn</label>
-                        <input id="soPhieuMuon" name="soPhieuMuon" value="@Model.SoPhieuMuon" class="form-control" />
+                        <select asp-for="SoPhieuMuon" asp-items="Model.PhieuMuonOptions" class="form-select" onchange="this.form.submit()">
+                            <option value="">-- Chọn phiếu còn sách chưa trả --</option>
+                        </select>
                     </div>
                     <div class="col-md-auto">
-                        <button type="submit" class="btn btn-primary">Tìm phiếu</button>
+                        <button type="submit" class="btn btn-primary">Xem phiếu</button>
                     </div>
                 </div>
             </form>

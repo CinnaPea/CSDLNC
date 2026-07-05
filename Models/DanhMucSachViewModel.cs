@@ -10,6 +10,7 @@ public class DanhMucSachViewModel
     public string? Tacgia { get; set; }
     public int? Namxuatban { get; set; }
     public string? Manhaxuatban { get; set; }
+    public int SoLuongBan { get; set; } = 1;
     public List<SelectListItem> TheLoaiOptions { get; set; } = new();
     public List<SelectListItem> NhaXuatBanOptions { get; set; } = new();
     public List<DanhMucSachRow> Rows { get; set; } = new();

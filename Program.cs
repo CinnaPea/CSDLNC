@@ -24,7 +24,14 @@ namespace CSDLNC
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                 });
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("CanManageFines", policy =>
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim("Permission", "Q005") ||
+                        context.User.HasClaim("Permission", "Q009") ||
+                        context.User.HasClaim("Permission", "Q001")));
+            });
 
             var app = builder.Build();
 

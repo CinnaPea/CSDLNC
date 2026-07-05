@@ -983,6 +983,35 @@ LEFT JOIN (
 ) x ON ds.madausach = x.madausach;
 GO
 
+CREATE OR ALTER PROCEDURE dbo.sp_DongBoDauSach
+    @MaDauSach VARCHAR(20) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    UPDATE ds
+    SET soluong = ISNULL(x.tongban, 0),
+        soluonghienco = ISNULL(x.hienco, 0),
+        soluongdangmuon = ISNULL(x.dangmuon, 0),
+        soluonghongmat = ISNULL(x.hongmat, 0),
+        lanmuongannhat = x.lanmuongannhat,
+        chuoitimkiem = CONCAT(ds.tendausach, N' ', ISNULL(ds.theloai, N''), N' ', ISNULL(ds.tacgia, N''))
+    FROM dau_sach ds
+    LEFT JOIN (
+        SELECT s.madausach,
+               COUNT(*) AS tongban,
+               SUM(CASE WHEN s.tinhtrang = N'Có thể mượn' THEN 1 ELSE 0 END) AS hienco,
+               SUM(CASE WHEN s.tinhtrang = N'Đang mượn' THEN 1 ELSE 0 END) AS dangmuon,
+               SUM(CASE WHEN s.tinhtrang IN (N'Hỏng', N'Mất') THEN 1 ELSE 0 END) AS hongmat,
+               MAX(s.ngaymuongannhat) AS lanmuongannhat
+        FROM sach s
+        WHERE @MaDauSach IS NULL OR s.madausach = @MaDauSach
+        GROUP BY s.madausach
+    ) x ON ds.madausach = x.madausach
+    WHERE @MaDauSach IS NULL OR ds.madausach = @MaDauSach;
+END;
+GO
+
 CREATE TYPE dbo.DanhSachSachMuon AS TABLE
 (
     MaSach VARCHAR(20) PRIMARY KEY,
@@ -1071,6 +1100,8 @@ BEGIN
         SET sosachdangmuon = sosachdangmuon + (SELECT COUNT(*) FROM @DanhSachSach)
         WHERE masinhvien = @MaSinhVien;
 
+        EXEC dbo.sp_DongBoDauSach;
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -1132,6 +1163,9 @@ BEGIN
 
         IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach)
             THROW 51001, N'Sách không thuộc phiếu mượn này.', 1;
+
+        IF EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach AND ngaytra IS NOT NULL)
+            THROW 51002, N'Sách đã được trả trước đó.', 1;
 
         SELECT @MaSinhVien = masinhvien, @NgayMuon = ngaymuon, @HanTra = hantra
         FROM phieu_muon
@@ -1204,6 +1238,8 @@ BEGIN
             WHERE sophieumuon = @SoPhieuMuon;
         END
 
+        EXEC dbo.sp_DongBoDauSach;
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH
@@ -1264,7 +1300,7 @@ BEGIN
 END;
 GO
 
-PRINT N'DA TAO XONG DATABASE QL_ThuVien_CSDLNC';
+PRINT N'DA TAO XONG PHAN LOI DATABASE QL_ThuVien_CSDLNC';
 GO
 
 CREATE TYPE dbo.DanhSachSachPhatHongMatType AS TABLE
@@ -1367,9 +1403,23 @@ BEGIN
             FROM ct_phieu_muon ct
             WHERE ct.sophieumuon = @SoPhieuMuonTra
               AND ct.masach = ds.masach
+              AND ct.ngaytra IS NULL
         )
     )
-        THROW 52002, N'Có sách không thuộc phiếu mượn này.', 1;
+        THROW 52002, N'Có sách không thuộc phiếu mượn này hoặc đã trả.', 1;
+
+    IF EXISTS (
+        SELECT 1
+        FROM @DanhSachSach ds
+        WHERE EXISTS (
+            SELECT 1
+            FROM phieu_phat_hong_mat p
+            INNER JOIN ct_phieu_phat_hong_mat ct ON p.sophieuphathongmat = ct.sophieuphathongmat
+            WHERE p.sophieumuon = @SoPhieuMuonTra
+              AND ct.masach = ds.masach
+        )
+    )
+        THROW 52003, N'Sách đã có phiếu phạt hỏng/mất.', 1;
 
     SET @SoPhieuPhatHongMat = CONCAT('PHM', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
 
@@ -1397,15 +1447,41 @@ BEGIN
         UPDATE s
         SET tinhtrang = ds.tinhtrang,
             trangthai = ds.tinhtrang,
+            sophieumuonhientai = NULL,
             ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
         FROM sach s
         INNER JOIN @DanhSachSach ds ON s.masach = ds.masach;
 
+        UPDATE ct
+        SET ngaytra = CAST(GETDATE() AS DATE),
+            ghichu = N'Đã lập phiếu phạt hỏng/mất: ' + @SoPhieuPhatHongMat
+        FROM ct_phieu_muon ct
+        INNER JOIN @DanhSachSach ds ON ct.masach = ds.masach
+        WHERE ct.sophieumuon = @SoPhieuMuonTra
+          AND ct.ngaytra IS NULL;
+
         UPDATE sinh_vien
         SET solanvipham = solanvipham + 1,
             sotienphatchuatra = sotienphatchuatra + (SELECT SUM(phiphat) FROM @DanhSachSach),
-            ngayviphamgannhat = CAST(GETDATE() AS DATE)
+            ngayviphamgannhat = CAST(GETDATE() AS DATE),
+            sosachdangmuon = (
+                SELECT COUNT(*)
+                FROM ct_phieu_muon ct
+                INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
+                WHERE pm.masinhvien = @MaSinhVien
+                  AND ct.ngaytra IS NULL
+            )
         WHERE masinhvien = @MaSinhVien;
+
+        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuonTra AND ngaytra IS NULL)
+        BEGIN
+            UPDATE phieu_muon
+            SET trangthaiphieu = N'Đã trả',
+                ngayhoantat = CAST(GETDATE() AS DATE)
+            WHERE sophieumuon = @SoPhieuMuonTra;
+        END
+
+        EXEC dbo.sp_DongBoDauSach;
 
         COMMIT TRANSACTION;
     END TRY
@@ -1458,9 +1534,23 @@ BEGIN
             FROM ct_phieu_muon ct
             WHERE ct.sophieumuon = @SoPhieuMuonTra
               AND ct.masach = ds.masach
+              AND ct.ngaytra IS NULL
         )
     )
-        THROW 53003, N'Có sách không thuộc phiếu mượn này.', 1;
+        THROW 53003, N'Có sách không thuộc phiếu mượn này hoặc đã trả.', 1;
+
+    IF EXISTS (
+        SELECT 1
+        FROM @DanhSachSach ds
+        WHERE EXISTS (
+            SELECT 1
+            FROM phieu_phat_qua_han p
+            INNER JOIN ct_phieu_phat_qua_han ct ON p.sophieuphatquahan = ct.sophieuphatquahan
+            WHERE p.sophieumuon = @SoPhieuMuonTra
+              AND ct.masach = ds.masach
+        )
+    )
+        THROW 53004, N'Sách đã có phiếu phạt quá hạn.', 1;
 
     SET @PhiMoiSach = @SoNgayQuaHan * @MucPhatMoiNgay;
     SET @TongPhat = @PhiMoiSach * (SELECT COUNT(*) FROM @DanhSachSach);
@@ -1497,11 +1587,36 @@ BEGIN
         INNER JOIN @DanhSachSach ds ON ct.masach = ds.masach
         WHERE ct.sophieumuon = @SoPhieuMuonTra;
 
+        UPDATE s
+        SET tinhtrang = N'Có thể mượn',
+            trangthai = N'Trong kho',
+            sophieumuonhientai = NULL,
+            ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
+        FROM sach s
+        INNER JOIN @DanhSachSach ds ON s.masach = ds.masach;
+
         UPDATE sinh_vien
         SET solanvipham = solanvipham + 1,
             sotienphatchuatra = sotienphatchuatra + @TongPhat,
-            ngayviphamgannhat = CAST(GETDATE() AS DATE)
+            ngayviphamgannhat = CAST(GETDATE() AS DATE),
+            sosachdangmuon = (
+                SELECT COUNT(*)
+                FROM ct_phieu_muon ct
+                INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
+                WHERE pm.masinhvien = @MaSinhVien
+                  AND ct.ngaytra IS NULL
+            )
         WHERE masinhvien = @MaSinhVien;
+
+        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuonTra AND ngaytra IS NULL)
+        BEGIN
+            UPDATE phieu_muon
+            SET trangthaiphieu = N'Đã trả',
+                ngayhoantat = @NgayTra
+            WHERE sophieumuon = @SoPhieuMuonTra;
+        END
+
+        EXEC dbo.sp_DongBoDauSach;
 
         COMMIT TRANSACTION;
     END TRY
@@ -1514,6 +1629,7 @@ GO
 
 
 -- Reset role package mappings
+DELETE FROM nguoi_dung_quyen;
 DELETE FROM nhom_nguoi_dung_ct;
 DELETE FROM nhom_quyen;
 
@@ -1522,7 +1638,7 @@ DELETE FROM nhom_nguoi_dung;
 
 INSERT INTO nhom_nguoi_dung (manhom, tennhom) VALUES
 ('N001', N'Quản trị viên'),
-('N002', N'Tủ thư nghiệp vụ'),
+('N002', N'Thủ thư nghiệp vụ'),
 ('N003', N'Kho và kiểm kê'),
 ('N004', N'Quản lý và báo cáo');
 

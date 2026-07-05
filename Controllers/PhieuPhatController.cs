@@ -8,7 +8,7 @@ using System.Data;
 
 namespace CSDLNC.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "CanManageFines")]
     public class PhieuPhatController : Controller
     {
         private readonly ThuVienDbContext _context;
@@ -18,10 +18,10 @@ namespace CSDLNC.Controllers
             _context = context;
         }
 
-        private void NapDuLieuGoiY()
+        private void NapDuLieuGoiY(string? soPhieuMuon = null)
         {
             ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(soPhieuMuon);
         }
 
         public IActionResult Index()
@@ -117,7 +117,7 @@ namespace CSDLNC.Controllers
                 if (model.DanhSachSach == null || model.DanhSachSach.Count == 0)
                     model.DanhSachSach = new List<ChiTietLapPhieuPhatHongMatViewModel> { new ChiTietLapPhieuPhatHongMatViewModel() };
                 ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                 return View(model);
             }
 
@@ -127,7 +127,7 @@ namespace CSDLNC.Controllers
                 model.ThanhCong = false;
                 model.DanhSachSach = new List<ChiTietLapPhieuPhatHongMatViewModel> { new ChiTietLapPhieuPhatHongMatViewModel() };
                 ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                 return View(model);
             }
 
@@ -141,7 +141,7 @@ namespace CSDLNC.Controllers
                 model.ThanhCong = false;
                 model.DanhSachSach.Add(new ChiTietLapPhieuPhatHongMatViewModel());
                 ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                 return View(model);
             }
 
@@ -152,7 +152,7 @@ namespace CSDLNC.Controllers
                     model.ThongBao = "Tình trạng chỉ được là Hỏng hoặc Mất.";
                     model.ThanhCong = false;
                     ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                    ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                    ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                     return View(model);
                 }
 
@@ -161,7 +161,7 @@ namespace CSDLNC.Controllers
                     model.ThongBao = "Phí phạt không được nhỏ hơn 0.";
                     model.ThanhCong = false;
                     ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                    ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                    ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                     return View(model);
                 }
             }
@@ -175,7 +175,7 @@ namespace CSDLNC.Controllers
                 model.ThongBao = "Không được nhập trùng mã sách trong cùng một phiếu.";
                 model.ThanhCong = false;
                 ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-                ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+                ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
                 return View(model);
             }
 
@@ -204,7 +204,7 @@ namespace CSDLNC.Controllers
                 var soPhieuMoiParam = new SqlParameter("@SoPhieuPhatHongMat", SqlDbType.VarChar, 20);
                 soPhieuMoiParam.Direction = ParameterDirection.Output;
 
-                var maNguoiDung = User.FindFirst("MaNguoiDung")?.Value;
+                var maNguoiDung = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 var tenNguoiDung = User.Identity?.Name;
 
                 _context.Database.ExecuteSqlRaw(
@@ -239,7 +239,7 @@ namespace CSDLNC.Controllers
                 model.ThanhCong = false;
             }
             ViewBag.DanhSachPhieuMuon = LayDanhSachSoPhieuMuon();
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra);
             return View(model);
         }
 
@@ -426,7 +426,7 @@ namespace CSDLNC.Controllers
                     }
                 }
             }
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra, baoGomDaTra: true);
             return View(model);
         }
 
@@ -434,7 +434,7 @@ namespace CSDLNC.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SuaHongMat(SuaPhieuPhatHongMatViewModel model)
         {
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra, baoGomDaTra: true);
 
             if (string.IsNullOrWhiteSpace(model.SoPhieuPhatHongMat))
             {
@@ -695,7 +695,10 @@ namespace CSDLNC.Controllers
 
                                 command.CommandText = @"
                             UPDATE sach
-                            SET tinhtrang = @tinhtrang
+                            SET tinhtrang = @tinhtrang,
+                                trangthai = @tinhtrang,
+                                sophieumuonhientai = NULL,
+                                ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
                             WHERE masach = @masach;
                         ";
 
@@ -718,7 +721,8 @@ namespace CSDLNC.Controllers
 
                                 command.CommandText = @"
                             UPDATE ct_phieu_muon
-                            SET ghichu = N'Đã cập nhật phiếu phạt hỏng/mất: ' + @sophieuphathongmat
+                            SET ngaytra = ISNULL(ngaytra, CAST(GETDATE() AS DATE)),
+                                ghichu = N'Đã cập nhật phiếu phạt hỏng/mất: ' + @sophieuphathongmat
                             WHERE sophieumuon = @sophieumuon
                               AND masach = @masach;
                         ";
@@ -757,18 +761,68 @@ namespace CSDLNC.Controllers
                                 command.Transaction = transaction;
 
                                 command.CommandText = @"
-                            UPDATE sach
-                            SET tinhtrang = N'Có thể mượn'
-                            WHERE masach = @masach;
+                            UPDATE s
+                            SET tinhtrang = CASE WHEN ct.ngaytra IS NULL THEN N'Đang mượn' ELSE N'Có thể mượn' END,
+                                trangthai = CASE WHEN ct.ngaytra IS NULL THEN N'Đang mượn' ELSE N'Trong kho' END,
+                                sophieumuonhientai = CASE WHEN ct.ngaytra IS NULL THEN @sophieumuon ELSE NULL END,
+                                ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
+                            FROM sach s
+                            INNER JOIN ct_phieu_muon ct ON ct.masach = s.masach
+                            WHERE s.masach = @masach
+                              AND ct.sophieumuon = @sophieumuon;
                         ";
 
-                                var p = command.CreateParameter();
-                                p.ParameterName = "@masach";
-                                p.Value = maSachCu;
-                                command.Parameters.Add(p);
+                                var p1 = command.CreateParameter();
+                                p1.ParameterName = "@masach";
+                                p1.Value = maSachCu;
+                                command.Parameters.Add(p1);
+
+                                var p2 = command.CreateParameter();
+                                p2.ParameterName = "@sophieumuon";
+                                p2.Value = soPhieuMuonTra;
+                                command.Parameters.Add(p2);
 
                                 command.ExecuteNonQuery();
                             }
+                        }
+
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.Transaction = transaction;
+
+                            command.CommandText = @"
+                        UPDATE sv
+                        SET sosachdangmuon = (
+                            SELECT COUNT(*)
+                            FROM ct_phieu_muon ct
+                            INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
+                            WHERE pm.masinhvien = sv.masinhvien
+                              AND ct.ngaytra IS NULL
+                        )
+                        FROM sinh_vien sv
+                        INNER JOIN phieu_muon pm ON pm.masinhvien = sv.masinhvien
+                        WHERE pm.sophieumuon = @sophieumuon;
+
+                        UPDATE phieu_muon
+                        SET trangthaiphieu = CASE WHEN EXISTS (
+                                SELECT 1 FROM ct_phieu_muon
+                                WHERE sophieumuon = @sophieumuon AND ngaytra IS NULL
+                            ) THEN N'Đang mượn' ELSE N'Đã trả' END,
+                            ngayhoantat = CASE WHEN EXISTS (
+                                SELECT 1 FROM ct_phieu_muon
+                                WHERE sophieumuon = @sophieumuon AND ngaytra IS NULL
+                            ) THEN NULL ELSE CAST(GETDATE() AS DATE) END
+                        WHERE sophieumuon = @sophieumuon;
+
+                        EXEC dbo.sp_DongBoDauSach;
+                    ";
+
+                            var p = command.CreateParameter();
+                            p.ParameterName = "@sophieumuon";
+                            p.Value = soPhieuMuonTra;
+                            command.Parameters.Add(p);
+
+                            command.ExecuteNonQuery();
                         }
 
                         using (var command = connection.CreateCommand())
@@ -947,7 +1001,7 @@ namespace CSDLNC.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult TaoQuaHan(LapPhieuPhatQuaHanViewModel model)
         {
-            NapDuLieuGoiY();
+            NapDuLieuGoiY(model.SoPhieuMuonTra);
 
             if (string.IsNullOrWhiteSpace(model.SoPhieuMuonTra))
             {
@@ -1036,7 +1090,7 @@ namespace CSDLNC.Controllers
                 var soPhieuMoiParam = new SqlParameter("@SoPhieuPhatQuaHan", SqlDbType.VarChar, 20);
                 soPhieuMoiParam.Direction = ParameterDirection.Output;
 
-                var maNguoiDung = User.FindFirst("MaNguoiDung")?.Value;
+                var maNguoiDung = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
                 var tenNguoiDung = User.Identity?.Name;
 
                 _context.Database.ExecuteSqlRaw(
@@ -1295,7 +1349,7 @@ namespace CSDLNC.Controllers
                     }
                 }
             }
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra, baoGomDaTra: true);
             return View(model);
         }
 
@@ -1303,7 +1357,7 @@ namespace CSDLNC.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult SuaQuaHan(SuaPhieuPhatQuaHanViewModel model)
         {
-            ViewBag.DanhSachSach = LayDanhSachSachGoiY();
+            ViewBag.DanhSachSach = LayDanhSachSachGoiY(model.SoPhieuMuonTra, baoGomDaTra: true);
 
             if (string.IsNullOrWhiteSpace(model.SoPhieuPhatQuaHan))
             {
@@ -1626,7 +1680,10 @@ namespace CSDLNC.Controllers
 
                                 command.CommandText = @"
                             UPDATE sach
-                            SET tinhtrang = N'Có thể mượn'
+                            SET tinhtrang = N'Có thể mượn',
+                                trangthai = N'Trong kho',
+                                sophieumuonhientai = NULL,
+                                ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
                             WHERE masach = @masach;
                         ";
 
@@ -1655,14 +1712,22 @@ namespace CSDLNC.Controllers
 
                                 command.CommandText = @"
                             UPDATE sach
-                            SET tinhtrang = N'Đang mượn'
+                            SET tinhtrang = N'Đang mượn',
+                                trangthai = N'Đang mượn',
+                                sophieumuonhientai = @sophieumuon,
+                                ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
                             WHERE masach = @masach;
                         ";
 
-                                var p = command.CreateParameter();
-                                p.ParameterName = "@masach";
-                                p.Value = maSachCu;
-                                command.Parameters.Add(p);
+                                var p1 = command.CreateParameter();
+                                p1.ParameterName = "@masach";
+                                p1.Value = maSachCu;
+                                command.Parameters.Add(p1);
+
+                                var p2 = command.CreateParameter();
+                                p2.ParameterName = "@sophieumuon";
+                                p2.Value = soPhieuMuonTra;
+                                command.Parameters.Add(p2);
 
                                 command.ExecuteNonQuery();
                             }
@@ -1697,6 +1762,50 @@ namespace CSDLNC.Controllers
 
                                 command.ExecuteNonQuery();
                             }
+                        }
+
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.Transaction = transaction;
+
+                            command.CommandText = @"
+                        UPDATE sv
+                        SET sosachdangmuon = (
+                            SELECT COUNT(*)
+                            FROM ct_phieu_muon ct
+                            INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
+                            WHERE pm.masinhvien = sv.masinhvien
+                              AND ct.ngaytra IS NULL
+                        )
+                        FROM sinh_vien sv
+                        INNER JOIN phieu_muon pm ON pm.masinhvien = sv.masinhvien
+                        WHERE pm.sophieumuon = @sophieumuon;
+
+                        UPDATE phieu_muon
+                        SET trangthaiphieu = CASE WHEN EXISTS (
+                                SELECT 1 FROM ct_phieu_muon
+                                WHERE sophieumuon = @sophieumuon AND ngaytra IS NULL
+                            ) THEN N'Đang mượn' ELSE N'Đã trả' END,
+                            ngayhoantat = CASE WHEN EXISTS (
+                                SELECT 1 FROM ct_phieu_muon
+                                WHERE sophieumuon = @sophieumuon AND ngaytra IS NULL
+                            ) THEN NULL ELSE @ngaytra END
+                        WHERE sophieumuon = @sophieumuon;
+
+                        EXEC dbo.sp_DongBoDauSach;
+                    ";
+
+                            var p1 = command.CreateParameter();
+                            p1.ParameterName = "@sophieumuon";
+                            p1.Value = soPhieuMuonTra;
+                            command.Parameters.Add(p1);
+
+                            var p2 = command.CreateParameter();
+                            p2.ParameterName = "@ngaytra";
+                            p2.Value = model.NgayTra;
+                            command.Parameters.Add(p2);
+
+                            command.ExecuteNonQuery();
                         }
 
                         using (var command = connection.CreateCommand())
@@ -1857,6 +1966,12 @@ namespace CSDLNC.Controllers
                 command.CommandText = @"
             SELECT sophieumuon
             FROM phieu_muon
+            WHERE EXISTS (
+                SELECT 1
+                FROM ct_phieu_muon ct
+                WHERE ct.sophieumuon = phieu_muon.sophieumuon
+                  AND ct.ngaytra IS NULL
+            )
             ORDER BY sophieumuon;
         ";
 
@@ -1871,7 +1986,7 @@ namespace CSDLNC.Controllers
 
             return dsPhieuMuon;
         }
-        private List<SachGoiYViewModel> LayDanhSachSachGoiY()
+        private List<SachGoiYViewModel> LayDanhSachSachGoiY(string? soPhieuMuon = null, bool baoGomDaTra = false)
         {
             var dsSach = new List<SachGoiYViewModel>();
 
@@ -1885,10 +2000,28 @@ namespace CSDLNC.Controllers
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = @"
-            SELECT masach, tensach
-            FROM sach
-            ORDER BY masach;
+            SELECT DISTINCT s.masach, s.tensach, ct.sophieumuon
+            FROM sach s
+            INNER JOIN ct_phieu_muon ct
+                ON ct.masach = s.masach
+            WHERE (@sophieumuon IS NULL AND ct.ngaytra IS NULL)
+               OR (
+                    @sophieumuon IS NOT NULL
+                    AND ct.sophieumuon = @sophieumuon
+                    AND (@baogomdatra = 1 OR ct.ngaytra IS NULL)
+               )
+            ORDER BY ct.sophieumuon, s.masach;
         ";
+
+                var p = command.CreateParameter();
+                p.ParameterName = "@sophieumuon";
+                p.Value = string.IsNullOrWhiteSpace(soPhieuMuon) ? DBNull.Value : soPhieuMuon;
+                command.Parameters.Add(p);
+
+                var includeReturnedParam = command.CreateParameter();
+                includeReturnedParam.ParameterName = "@baogomdatra";
+                includeReturnedParam.Value = baoGomDaTra ? 1 : 0;
+                command.Parameters.Add(includeReturnedParam);
 
                 using (var reader = command.ExecuteReader())
                 {
@@ -1897,7 +2030,8 @@ namespace CSDLNC.Controllers
                         dsSach.Add(new SachGoiYViewModel
                         {
                             MaSach = reader["masach"].ToString(),
-                            TenSach = reader["tensach"].ToString()
+                            TenSach = reader["tensach"].ToString(),
+                            SoPhieuMuon = reader["sophieumuon"].ToString()
                         });
                     }
                 }

@@ -89,13 +89,44 @@ public class KiemKeController : Controller
             Ghichu = model.Ghichu
         };
 
-        sach!.Tinhtrang = model.Tinhtrang;
+        var tinhTrang = model.Tinhtrang!;
+        sach!.Tinhtrang = tinhTrang;
+        sach.Trangthai = tinhTrang == "Có thể mượn" ? "Trong kho" : tinhTrang;
+        sach.Sophieumuonhientai = tinhTrang == "Đang mượn" ? sach.Sophieumuonhientai : null;
         sach.Ngaycapnhattrangthai = DateOnly.FromDateTime(DateTime.Today);
+
+        if (tinhTrang != "Đang mượn")
+        {
+            var openLoanDetails = await _context.CtPhieuMuons
+                .Include(x => x.SophieumuonNavigation)
+                .ThenInclude(x => x.MasinhvienNavigation)
+                .Where(x => x.Masach == model.Masach && x.Ngaytra == null)
+                .ToListAsync();
+
+            foreach (var detail in openLoanDetails)
+            {
+                detail.Ngaytra = DateOnly.FromDateTime(DateTime.Today);
+                detail.Ghichu = "Đóng bởi kiểm kê: " + tinhTrang;
+
+                var loan = detail.SophieumuonNavigation;
+                if (loan.MasinhvienNavigation != null && loan.MasinhvienNavigation.Sosachdangmuon > 0)
+                    loan.MasinhvienNavigation.Sosachdangmuon--;
+
+                await _context.Entry(loan).Collection(x => x.CtPhieuMuons).LoadAsync();
+
+                if (loan.CtPhieuMuons.All(x => x.Ngaytra != null))
+                {
+                    loan.Trangthaiphieu = "Đã trả";
+                    loan.Ngayhoantat = DateOnly.FromDateTime(DateTime.Today);
+                }
+            }
+        }
 
         _context.PhieuKiemKes.Add(phieu);
         _context.CtPhieuKiemKes.Add(chiTiet);
 
         await _context.SaveChangesAsync();
+        await ResyncDauSachAsync(sach.Madausach);
 
         TempData["Success"] = "Ghi kiểm kê sách thành công.";
         return RedirectToAction(nameof(Create));
@@ -145,5 +176,24 @@ public class KiemKeController : Controller
             .CountAsync(x => x.Makiemke.StartsWith(prefix));
 
         return prefix + (countToday + 1).ToString("00");
+    }
+
+    private async Task ResyncDauSachAsync(string? maDauSach)
+    {
+        if (string.IsNullOrWhiteSpace(maDauSach))
+            return;
+
+        var dauSach = await _context.DauSaches.FirstOrDefaultAsync(x => x.Madausach == maDauSach);
+        if (dauSach == null)
+            return;
+
+        var saches = await _context.Saches.Where(x => x.Madausach == maDauSach).ToListAsync();
+        dauSach.Soluong = saches.Count;
+        dauSach.Soluonghienco = saches.Count(x => x.Tinhtrang == "Có thể mượn");
+        dauSach.Soluongdangmuon = saches.Count(x => x.Tinhtrang == "Đang mượn");
+        dauSach.Soluonghongmat = saches.Count(x => x.Tinhtrang == "Hỏng" || x.Tinhtrang == "Mất");
+        dauSach.Lanmuongannhat = saches.Max(x => x.Ngaymuongannhat);
+
+        await _context.SaveChangesAsync();
     }
 }
