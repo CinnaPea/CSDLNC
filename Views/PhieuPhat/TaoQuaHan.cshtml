@@ -1,0 +1,399 @@
+﻿@model CSDLNC.Models.LapPhieuPhatQuaHanViewModel
+
+@{
+    ViewData["Title"] = "Lập phiếu phạt quá hạn";
+    var dsPhieuMuon = ViewBag.DanhSachPhieuMuon as List<string> ?? new List<string>();
+    var dsSach = ViewBag.DanhSachSach as List<CSDLNC.Models.SachGoiYViewModel> ?? new List<CSDLNC.Models.SachGoiYViewModel>();
+}
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+
+            <h3 class="card-title mb-3">Lập phiếu phạt quá hạn</h3>
+
+           
+
+            @if (!string.IsNullOrEmpty(Model.ThongBao))
+            {
+                <div class="alert @(Model.ThanhCong ? "alert-success" : "alert-danger")">
+                    @Model.ThongBao
+                </div>
+            }
+
+            <form asp-controller="PhieuPhat" asp-action="TaoQuaHan" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Số phiếu mượn</label>
+
+                        <div class="combo-box phieu-muon-combo">
+                            <input asp-for="SoPhieuMuonTra"
+                                   id="SoPhieuMuonTra"
+                                   class="form-control"
+                                   autocomplete="off"
+                                   placeholder="Nhập hoặc chọn số phiếu mượn"
+                                   oninput="locPhieuMuon()"
+                                   onclick="hienDanhSachPhieuMuon()"
+                                   onblur="setTimeout(layThongTinPhieuMuon, 200)" />
+
+                            <div id="danhSachGoiYPhieuMuon" class="combo-list">
+                                @foreach (var item in dsPhieuMuon)
+                                {
+                                    <div class="combo-item"
+                                         data-value="@item"
+                                         onclick="chonPhieuMuon(this.dataset.value)">
+                                        <span class="combo-code">@item</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Ngày mượn</label>
+                        <input asp-for="NgayMuon"
+                               id="NgayMuon"
+                               type="date"
+                               class="form-control"
+                               readonly />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Hạn trả</label>
+                        <input asp-for="HanTra"
+                               id="HanTra"
+                               type="date"
+                               class="form-control"
+                               readonly />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Ngày trả</label>
+                        <input asp-for="NgayTra"
+                               type="date"
+                               class="form-control" />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Mức phạt mỗi ngày</label>
+                        <input asp-for="MucPhatMoiNgay"
+                               type="number"
+                               min="0"
+                               class="form-control" />
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Danh sách sách quá hạn</h5>
+
+                <table class="table table-bordered align-middle" id="bangSachQuaHan">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 60px;">STT</th>
+                            <th>Mã sách</th>
+                            <th style="width: 90px;">Xóa</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (int i = 0; i < Model.DanhSachSach.Count; i++)
+                        {
+                            <tr>
+                                <td class="stt">@(i + 1)</td>
+
+                                <td>
+                                    <div class="combo-box sach-combo">
+                                        <input name="DanhSachSach[@i].MaSach"
+                                               value="@Model.DanhSachSach[i].MaSach"
+                                               class="form-control input-ma-sach"
+                                               autocomplete="off"
+                                               placeholder="Nhập hoặc chọn mã sách"
+                                               oninput="locSach(this)"
+                                               onclick="hienDanhSachSach(this)" />
+
+                                        <div class="combo-list sach-list">
+                                            @foreach (var sach in dsSach)
+                                            {
+                                                <div class="combo-item"
+                                                     data-ma="@sach.MaSach"
+                                                     data-ten="@sach.TenSach"
+                                                     onclick="chonSach(this)">
+                                                    <span class="combo-code">@sach.MaSach</span>
+                                                    <span class="combo-name"> - @sach.TenSach</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger" onclick="xoaDong(this)">
+                                        Xóa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <button type="button" class="btn btn-success mb-3" onclick="themDongSach()">
+                    + Thêm sách
+                </button>
+
+                <br />
+
+                <button type="submit" class="btn btn-primary">
+                    Lập phiếu phạt
+                </button>
+
+                <a asp-controller="PhieuPhat"
+                   asp-action="LapQuaHan"
+                   class="btn btn-secondary">
+                    Quay lại danh sách
+                </a>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .combo-box {
+        position: relative;
+        width: 100%;
+    }
+
+    .combo-list {
+        display: none;
+        position: absolute;
+        top: 105%;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: #ffffff;
+        border: 1px solid #d9e2ec;
+        border-radius: 12px;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+        max-height: 240px;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .combo-item {
+        padding: 10px 12px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #334155;
+        transition: all 0.15s ease;
+    }
+
+        .combo-item:hover {
+            background: #e8f3ff;
+            color: #0d6efd;
+            font-weight: 600;
+        }
+
+    .combo-code {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #2563eb;
+        font-weight: 600;
+    }
+
+    .combo-name {
+        color: #64748b;
+        margin-left: 4px;
+    }
+
+    .combo-item:hover .combo-code {
+        background: #dbeafe;
+    }
+
+    .combo-item:hover .combo-name {
+        color: #0d6efd;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        function layThongTinPhieuMuon() {
+            const soPhieuMuon = document.getElementById("SoPhieuMuonTra").value;
+
+            if (!soPhieuMuon) {
+                document.getElementById("NgayMuon").value = "";
+                document.getElementById("HanTra").value = "";
+                return;
+            }
+
+            fetch("/PhieuPhat/LayThongTinPhieuMuon?soPhieuMuon=" + encodeURIComponent(soPhieuMuon))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.thanhCong) {
+                        document.getElementById("NgayMuon").value = data.ngayMuon;
+                        document.getElementById("HanTra").value = data.hanTra;
+                    } else {
+                        document.getElementById("NgayMuon").value = "";
+                        document.getElementById("HanTra").value = "";
+                    }
+                });
+        }
+
+        function hienDanhSachPhieuMuon() {
+            const danhSach = document.getElementById("danhSachGoiYPhieuMuon");
+            danhSach.style.display = "block";
+            locPhieuMuon();
+        }
+
+        function locPhieuMuon() {
+            const input = document.getElementById("SoPhieuMuonTra");
+            const danhSach = document.getElementById("danhSachGoiYPhieuMuon");
+            const tuKhoa = input.value.toLowerCase();
+
+            const items = document.querySelectorAll("#danhSachGoiYPhieuMuon .combo-item");
+
+            let coKetQua = false;
+
+            items.forEach(function (item) {
+                const value = item.dataset.value.toLowerCase();
+
+                if (value.includes(tuKhoa)) {
+                    item.style.display = "block";
+                    coKetQua = true;
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            danhSach.style.display = coKetQua ? "block" : "none";
+        }
+
+        function chonPhieuMuon(value) {
+            document.getElementById("SoPhieuMuonTra").value = value;
+            document.getElementById("danhSachGoiYPhieuMuon").style.display = "none";
+            layThongTinPhieuMuon();
+        }
+
+        function hienDanhSachSach(input) {
+            const combo = input.closest(".sach-combo");
+            const danhSach = combo.querySelector(".sach-list");
+
+            danhSach.style.display = "block";
+            locSach(input);
+        }
+
+        function locSach(input) {
+            const combo = input.closest(".sach-combo");
+            const danhSach = combo.querySelector(".sach-list");
+            const tuKhoa = input.value.toLowerCase();
+
+            const items = combo.querySelectorAll(".sach-list .combo-item");
+
+            let coKetQua = false;
+
+            items.forEach(function (item) {
+                const ma = item.dataset.ma.toLowerCase();
+                const ten = item.dataset.ten.toLowerCase();
+                const noiDung = ma + " " + ten;
+
+                if (noiDung.includes(tuKhoa)) {
+                    item.style.display = "block";
+                    coKetQua = true;
+                } else {
+                    item.style.display = "none";
+                }
+            });
+
+            danhSach.style.display = coKetQua ? "block" : "none";
+        }
+
+        function chonSach(item) {
+            const combo = item.closest(".sach-combo");
+            const input = combo.querySelector(".input-ma-sach");
+
+            input.value = item.dataset.ma;
+            combo.querySelector(".sach-list").style.display = "none";
+        }
+
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll(".combo-box").forEach(function (combo) {
+                if (!combo.contains(event.target)) {
+                    const list = combo.querySelector(".combo-list");
+                    if (list) {
+                        list.style.display = "none";
+                    }
+                }
+            });
+        });
+
+        function capNhatSTT() {
+            const rows = document.querySelectorAll("#bangSachQuaHan tbody tr");
+
+            rows.forEach(function (row, index) {
+                row.querySelector(".stt").innerText = index + 1;
+
+                row.querySelectorAll("input").forEach(function (input) {
+                    input.name = input.name.replace(/DanhSachSach\[\d+\]/, "DanhSachSach[" + index + "]");
+                });
+            });
+        }
+
+        function themDongSach() {
+            const tbody = document.querySelector("#bangSachQuaHan tbody");
+            const index = tbody.querySelectorAll("tr").length;
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td class="stt">${index + 1}</td>
+
+                <td>
+                    <div class="combo-box sach-combo">
+                        <input name="DanhSachSach[${index}].MaSach"
+                               class="form-control input-ma-sach"
+                               autocomplete="off"
+                               placeholder="Nhập hoặc chọn mã sách"
+                               oninput="locSach(this)"
+                               onclick="hienDanhSachSach(this)" />
+
+                        <div class="combo-list sach-list">
+        @foreach (var sach in dsSach)
+        {
+                                    <div class="combo-item"
+                                         data-ma="@sach.MaSach"
+                                         data-ten="@sach.TenSach"
+                                         onclick="chonSach(this)">
+                                        <span class="combo-code">@sach.MaSach</span>
+                                        <span class="combo-name"> - @sach.TenSach</span>
+                                    </div>
+        }
+                        </div>
+                    </div>
+                </td>
+
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="xoaDong(this)">
+                        Xóa
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(row);
+        }
+
+        function xoaDong(button) {
+            const tbody = document.querySelector("#bangSachQuaHan tbody");
+
+            if (tbody.querySelectorAll("tr").length <= 1) {
+                alert("Phải có ít nhất một dòng sách.");
+                return;
+            }
+
+            button.closest("tr").remove();
+            capNhatSTT();
+        }
+    </script>
+}
