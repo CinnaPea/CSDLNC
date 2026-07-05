@@ -51,7 +51,7 @@ namespace CSDLNC.Controllers
                     SELECT 
                         p.sophieuphathongmat,
                         p.ngaylap,
-                        p.sophieumuontra,
+                        p.sophieumuon,
                         p.masinhvien,
                         p.tennguoidung,
                         p.tongphat,
@@ -62,7 +62,7 @@ namespace CSDLNC.Controllers
                     GROUP BY 
                         p.sophieuphathongmat,
                         p.ngaylap,
-                        p.sophieumuontra,
+                        p.sophieumuon,
                         p.masinhvien,
                         p.tennguoidung,
                         p.tongphat
@@ -77,7 +77,7 @@ namespace CSDLNC.Controllers
                         {
                             SoPhieuPhatHongMat = reader["sophieuphathongmat"].ToString(),
                             NgayLap = Convert.ToDateTime(reader["ngaylap"]),
-                            SoPhieuMuonTra = reader["sophieumuontra"].ToString(),
+                            SoPhieuMuonTra = reader["sophieumuon"].ToString(),
                             MaSinhVien = reader["masinhvien"].ToString(),
                             TenNguoiDung = reader["tennguoidung"].ToString(),
                             TongPhat = Convert.ToDecimal(reader["tongphat"]),
@@ -270,7 +270,7 @@ namespace CSDLNC.Controllers
                     SELECT 
                         sophieuphathongmat,
                         ngaylap,
-                        sophieumuontra,
+                        sophieumuon,
                         masinhvien,
                         tennguoidung,
                         tongphat
@@ -289,7 +289,7 @@ namespace CSDLNC.Controllers
                     {
                         model.SoPhieuPhatHongMat = reader["sophieuphathongmat"].ToString();
                         model.NgayLap = Convert.ToDateTime(reader["ngaylap"]);
-                        model.SoPhieuMuonTra = reader["sophieumuontra"].ToString();
+                        model.SoPhieuMuonTra = reader["sophieumuon"].ToString();
                         model.MaSinhVien = reader["masinhvien"].ToString();
                         model.TenNguoiDung = reader["tennguoidung"].ToString();
                         model.TongPhat = Convert.ToDecimal(reader["tongphat"]);
@@ -364,7 +364,7 @@ namespace CSDLNC.Controllers
             SELECT 
                 sophieuphathongmat,
                 ngaylap,
-                sophieumuontra,
+                sophieumuon,
                 masinhvien,
                 tennguoidung,
                 tongphat
@@ -383,7 +383,7 @@ namespace CSDLNC.Controllers
                     {
                         model.SoPhieuPhatHongMat = reader["sophieuphathongmat"].ToString();
                         model.NgayLap = Convert.ToDateTime(reader["ngaylap"]);
-                        model.SoPhieuMuonTra = reader["sophieumuontra"].ToString();
+                        model.SoPhieuMuonTra = reader["sophieumuon"].ToString();
                         model.MaSinhVien = reader["masinhvien"].ToString();
                         model.TenNguoiDung = reader["tennguoidung"].ToString();
                         model.TongPhat = Convert.ToDecimal(reader["tongphat"]);
@@ -512,7 +512,7 @@ namespace CSDLNC.Controllers
                             command.Transaction = transaction;
 
                             command.CommandText = @"
-                        SELECT sophieumuontra
+                        SELECT sophieumuon
                         FROM phieu_phat_hong_mat
                         WHERE sophieuphathongmat = @sophieuphathongmat;
                     ";
@@ -892,7 +892,7 @@ namespace CSDLNC.Controllers
             SELECT 
                 p.sophieuphatquahan,
                 p.ngaylap,
-                p.sophieumuontra,
+                p.sophieumuon,
                 p.masinhvien,
                 p.tennguoidung,
                 p.tongphat,
@@ -903,7 +903,7 @@ namespace CSDLNC.Controllers
             GROUP BY 
                 p.sophieuphatquahan,
                 p.ngaylap,
-                p.sophieumuontra,
+                p.sophieumuon,
                 p.masinhvien,
                 p.tennguoidung,
                 p.tongphat
@@ -918,7 +918,7 @@ namespace CSDLNC.Controllers
                         {
                             SoPhieuPhatQuaHan = reader["sophieuphatquahan"].ToString(),
                             NgayLap = Convert.ToDateTime(reader["ngaylap"]),
-                            SoPhieuMuonTra = reader["sophieumuontra"].ToString(),
+                            SoPhieuMuonTra = reader["sophieumuon"].ToString(),
                             MaSinhVien = reader["masinhvien"].ToString(),
                             TenNguoiDung = reader["tennguoidung"].ToString(),
                             TongPhat = Convert.ToDecimal(reader["tongphat"]),
@@ -1102,7 +1102,7 @@ namespace CSDLNC.Controllers
             SELECT 
                 sophieuphatquahan,
                 ngaylap,
-                sophieumuontra,
+                sophieumuon,
                 masinhvien,
                 tennguoidung,
                 tongphat
@@ -1121,7 +1121,7 @@ namespace CSDLNC.Controllers
                     {
                         model.SoPhieuPhatQuaHan = reader["sophieuphatquahan"].ToString();
                         model.NgayLap = Convert.ToDateTime(reader["ngaylap"]);
-                        model.SoPhieuMuonTra = reader["sophieumuontra"].ToString();
+                        model.SoPhieuMuonTra = reader["sophieumuon"].ToString();
                         model.MaSinhVien = reader["masinhvien"].ToString();
                         model.TenNguoiDung = reader["tennguoidung"].ToString();
                         model.TongPhat = Convert.ToDecimal(reader["tongphat"]);
@@ -1200,7 +1200,7 @@ namespace CSDLNC.Controllers
             SELECT 
                 p.sophieuphatquahan,
                 p.ngaylap,
-                p.sophieumuontra,
+                p.sophieumuon,
                 p.masinhvien,
                 p.tennguoidung,
                 p.tongphat,
@@ -1214,14 +1214,14 @@ namespace CSDLNC.Controllers
                 END AS mucphatmoingay
             FROM phieu_phat_qua_han p
             JOIN phieu_muon pm
-                ON p.sophieumuontra = pm.sophieumuon
+                ON p.sophieumuon = pm.sophieumuon
             JOIN ct_phieu_phat_qua_han ct
                 ON p.sophieuphatquahan = ct.sophieuphatquahan
             WHERE p.sophieuphatquahan = @id
             GROUP BY
                 p.sophieuphatquahan,
                 p.ngaylap,
-                p.sophieumuontra,
+                p.sophieumuon,
                 p.masinhvien,
                 p.tennguoidung,
                 p.tongphat,
@@ -1240,7 +1240,7 @@ namespace CSDLNC.Controllers
                     {
                         model.SoPhieuPhatQuaHan = reader["sophieuphatquahan"].ToString();
                         model.NgayLap = Convert.ToDateTime(reader["ngaylap"]);
-                        model.SoPhieuMuonTra = reader["sophieumuontra"].ToString();
+                        model.SoPhieuMuonTra = reader["sophieumuon"].ToString();
                         model.MaSinhVien = reader["masinhvien"].ToString();
                         model.TenNguoiDung = reader["tennguoidung"].ToString();
                         model.TongPhat = Convert.ToDecimal(reader["tongphat"]);
@@ -1376,12 +1376,12 @@ namespace CSDLNC.Controllers
 
                             command.CommandText = @"
                         SELECT 
-                            p.sophieumuontra,
+                            p.sophieumuon,
                             pm.ngaymuon,
                             pm.hantra
                         FROM phieu_phat_qua_han p
                         JOIN phieu_muon pm
-                            ON p.sophieumuontra = pm.sophieumuon
+                            ON p.sophieumuon = pm.sophieumuon
                         WHERE p.sophieuphatquahan = @sophieuphatquahan;
                     ";
 
@@ -1394,7 +1394,7 @@ namespace CSDLNC.Controllers
                             {
                                 if (reader.Read())
                                 {
-                                    soPhieuMuonTra = reader["sophieumuontra"].ToString()!;
+                                    soPhieuMuonTra = reader["sophieumuon"].ToString()!;
                                     ngayMuon = Convert.ToDateTime(reader["ngaymuon"]);
                                     hanTra = Convert.ToDateTime(reader["hantra"]);
                                 }

@@ -1267,6 +1267,251 @@ GO
 PRINT N'DA TAO XONG DATABASE QL_ThuVien_CSDLNC';
 GO
 
+CREATE TYPE dbo.DanhSachSachPhatHongMatType AS TABLE
+(
+    masach VARCHAR(20),
+    tinhtrang NVARCHAR(50),
+    mucdo NVARCHAR(100),
+    phiphat DECIMAL(18,2)
+);
+GO
+
+CREATE TYPE dbo.DanhSachSachPhatQuaHanType AS TABLE
+(
+    masach VARCHAR(20)
+);
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ThongKeSachHongMatTrongThang
+    @Thang INT,
+    @Nam INT,
+    @TinhTrang NVARCHAR(50) = N'Tất cả'
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT
+        s.masach AS MaSach,
+        s.tensach AS TenSach,
+        s.theloai AS TheLoai,
+        s.tacgia AS TacGia,
+        s.nhaxuatban AS NXB,
+        s.tinhtrang AS TinhTrang
+    FROM sach s
+    WHERE MONTH(s.ngaycapnhattrangthai) = @Thang
+      AND YEAR(s.ngaycapnhattrangthai) = @Nam
+      AND s.tinhtrang IN (N'Hỏng', N'Mất')
+      AND (@TinhTrang = N'Tất cả' OR s.tinhtrang = @TinhTrang);
+
+    SELECT
+        COUNT(*) AS TongSoSachHongMat,
+        SUM(CASE WHEN s.tinhtrang = N'Hỏng' THEN 1 ELSE 0 END) AS SoSachHong,
+        SUM(CASE WHEN s.tinhtrang = N'Mất' THEN 1 ELSE 0 END) AS SoSachMat
+    FROM sach s
+    WHERE MONTH(s.ngaycapnhattrangthai) = @Thang
+      AND YEAR(s.ngaycapnhattrangthai) = @Nam
+      AND s.tinhtrang IN (N'Hỏng', N'Mất')
+      AND (@TinhTrang = N'Tất cả' OR s.tinhtrang = @TinhTrang);
+END;
+GO
+
+IF TYPE_ID(N'dbo.DanhSachSachPhatHongMatType') IS NULL
+BEGIN
+    EXEC(N'
+        CREATE TYPE dbo.DanhSachSachPhatHongMatType AS TABLE
+        (
+            masach VARCHAR(20),
+            tinhtrang NVARCHAR(50),
+            mucdo NVARCHAR(255),
+            phiphat DECIMAL(18,2)
+        );
+    ');
+END;
+GO
+
+IF TYPE_ID(N'dbo.DanhSachSachPhatQuaHanType') IS NULL
+BEGIN
+    EXEC(N'
+        CREATE TYPE dbo.DanhSachSachPhatQuaHanType AS TABLE
+        (
+            masach VARCHAR(20)
+        );
+    ');
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_LapPhieuPhatHongMat
+    @SoPhieuMuonTra VARCHAR(20),
+    @DanhSachSach dbo.DanhSachSachPhatHongMatType READONLY,
+    @MaNguoiDung VARCHAR(20) = NULL,
+    @TenNguoiDung NVARCHAR(100) = NULL,
+    @SoPhieuPhatHongMat VARCHAR(20) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @MaSinhVien VARCHAR(20);
+
+    SELECT @MaSinhVien = masinhvien
+    FROM phieu_muon
+    WHERE sophieumuon = @SoPhieuMuonTra;
+
+    IF @MaSinhVien IS NULL
+        THROW 52001, N'Phiếu mượn không tồn tại.', 1;
+
+    IF EXISTS (
+        SELECT 1
+        FROM @DanhSachSach ds
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM ct_phieu_muon ct
+            WHERE ct.sophieumuon = @SoPhieuMuonTra
+              AND ct.masach = ds.masach
+        )
+    )
+        THROW 52002, N'Có sách không thuộc phiếu mượn này.', 1;
+
+    SET @SoPhieuPhatHongMat = CONCAT('PHM', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO phieu_phat_hong_mat
+        (
+            sophieuphathongmat, ngaylap, sophieumuon, masinhvien,
+            manguoidung, tennguoidung, tongphat, sotienconlai
+        )
+        SELECT
+            @SoPhieuPhatHongMat, CAST(GETDATE() AS DATE), @SoPhieuMuonTra, @MaSinhVien,
+            @MaNguoiDung, @TenNguoiDung, SUM(phiphat), SUM(phiphat)
+        FROM @DanhSachSach;
+
+        INSERT INTO ct_phieu_phat_hong_mat
+        (
+            sophieuphathongmat, masach, tinhtrang, mucdo, phiphat, tongphat
+        )
+        SELECT
+            @SoPhieuPhatHongMat, masach, tinhtrang, mucdo, phiphat, phiphat
+        FROM @DanhSachSach;
+
+        UPDATE s
+        SET tinhtrang = ds.tinhtrang,
+            trangthai = ds.tinhtrang,
+            ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
+        FROM sach s
+        INNER JOIN @DanhSachSach ds ON s.masach = ds.masach;
+
+        UPDATE sinh_vien
+        SET solanvipham = solanvipham + 1,
+            sotienphatchuatra = sotienphatchuatra + (SELECT SUM(phiphat) FROM @DanhSachSach),
+            ngayviphamgannhat = CAST(GETDATE() AS DATE)
+        WHERE masinhvien = @MaSinhVien;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_LapPhieuPhatQuaHan
+    @SoPhieuMuonTra VARCHAR(20),
+    @DanhSachSach dbo.DanhSachSachPhatQuaHanType READONLY,
+    @NgayTra DATE,
+    @MucPhatMoiNgay DECIMAL(18,2),
+    @MaNguoiDung VARCHAR(20) = NULL,
+    @TenNguoiDung NVARCHAR(100) = NULL,
+    @SoPhieuPhatQuaHan VARCHAR(20) OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @MaSinhVien VARCHAR(20);
+    DECLARE @NgayMuon DATE;
+    DECLARE @HanTra DATE;
+    DECLARE @SoNgayQuaHan INT;
+    DECLARE @PhiMoiSach DECIMAL(18,2);
+    DECLARE @TongPhat DECIMAL(18,2);
+
+    SELECT
+        @MaSinhVien = masinhvien,
+        @NgayMuon = ngaymuon,
+        @HanTra = hantra
+    FROM phieu_muon
+    WHERE sophieumuon = @SoPhieuMuonTra;
+
+    IF @MaSinhVien IS NULL
+        THROW 53001, N'Phiếu mượn không tồn tại.', 1;
+
+    SET @SoNgayQuaHan = DATEDIFF(DAY, @HanTra, @NgayTra);
+
+    IF @SoNgayQuaHan <= 0
+        THROW 53002, N'Phiếu mượn chưa quá hạn.', 1;
+
+    IF EXISTS (
+        SELECT 1
+        FROM @DanhSachSach ds
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM ct_phieu_muon ct
+            WHERE ct.sophieumuon = @SoPhieuMuonTra
+              AND ct.masach = ds.masach
+        )
+    )
+        THROW 53003, N'Có sách không thuộc phiếu mượn này.', 1;
+
+    SET @PhiMoiSach = @SoNgayQuaHan * @MucPhatMoiNgay;
+    SET @TongPhat = @PhiMoiSach * (SELECT COUNT(*) FROM @DanhSachSach);
+    SET @SoPhieuPhatQuaHan = CONCAT('PQH', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        INSERT INTO phieu_phat_qua_han
+        (
+            sophieuphatquahan, ngaylap, sophieumuon, masinhvien,
+            manguoidung, tennguoidung, tongphat, sotienconlai
+        )
+        VALUES
+        (
+            @SoPhieuPhatQuaHan, CAST(GETDATE() AS DATE), @SoPhieuMuonTra, @MaSinhVien,
+            @MaNguoiDung, @TenNguoiDung, @TongPhat, @TongPhat
+        );
+
+        INSERT INTO ct_phieu_phat_qua_han
+        (
+            sophieuphatquahan, masach, songayquahan,
+            phiphat, ngaymuon, hantra, ngaytra, tongphat
+        )
+        SELECT
+            @SoPhieuPhatQuaHan, masach, @SoNgayQuaHan,
+            @PhiMoiSach, @NgayMuon, @HanTra, @NgayTra, @PhiMoiSach
+        FROM @DanhSachSach;
+
+        UPDATE ct
+        SET ngaytra = @NgayTra,
+            ghichu = N'Đã lập phiếu phạt quá hạn: ' + @SoPhieuPhatQuaHan
+        FROM ct_phieu_muon ct
+        INNER JOIN @DanhSachSach ds ON ct.masach = ds.masach
+        WHERE ct.sophieumuon = @SoPhieuMuonTra;
+
+        UPDATE sinh_vien
+        SET solanvipham = solanvipham + 1,
+            sotienphatchuatra = sotienphatchuatra + @TongPhat,
+            ngayviphamgannhat = CAST(GETDATE() AS DATE)
+        WHERE masinhvien = @MaSinhVien;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
 
 -- Reset role package mappings
 DELETE FROM nhom_nguoi_dung_ct;
