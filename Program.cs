@@ -29,7 +29,6 @@ namespace CSDLNC
                 options.AddPolicy("CanManageFines", policy =>
                     policy.RequireAssertion(context =>
                         context.User.HasClaim("Permission", "Q005") ||
-                        context.User.HasClaim("Permission", "Q009") ||
                         context.User.HasClaim("Permission", "Q001")));
             });
 

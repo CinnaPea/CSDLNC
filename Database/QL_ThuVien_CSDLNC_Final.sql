@@ -1141,7 +1141,7 @@ BEGIN
 END;
 GO
 
-CREATE PROCEDURE sp_CapNhatTraSach
+CREATE OR ALTER PROCEDURE sp_CapNhatTraSach
     @SoPhieuMuon VARCHAR(20),
     @MaSach VARCHAR(20),
     @NgayTra DATE,
@@ -1152,6 +1152,7 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @MaSinhVien VARCHAR(20);
+    DECLARE @HanTra DATE;
     DECLARE @NgayMuon DATE;
     DECLARE @HanTra DATE;
     DECLARE @SoNgayQuaHan INT;
@@ -1249,6 +1250,78 @@ BEGIN
 END;
 GO
 
+CREATE OR ALTER PROCEDURE dbo.sp_CapNhatTraSach
+    @SoPhieuMuon VARCHAR(20),
+    @MaSach VARCHAR(20),
+    @NgayTra DATE,
+    @TinhTrangSauTra NVARCHAR(50),
+    @GhiChu NVARCHAR(255) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE @MaSinhVien VARCHAR(20);
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach)
+            THROW 51001, N'Sach khong thuoc phieu muon nay.', 1;
+
+        IF EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach AND ngaytra IS NOT NULL)
+            THROW 51002, N'Sach da duoc tra truoc do.', 1;
+
+        SELECT @MaSinhVien = masinhvien, @HanTra = hantra
+        FROM phieu_muon
+        WHERE sophieumuon = @SoPhieuMuon;
+
+        IF @TinhTrangSauTra <> N'Tốt'
+            THROW 51003, N'Cap nhat tra sach chi dung cho tra binh thuong. Hay lap phieu phat cho sach hong, mat hoac qua han.', 1;
+
+        IF @NgayTra > @HanTra
+            THROW 51004, N'Sach qua han phai lap phieu phat qua han.', 1;
+
+        UPDATE ct_phieu_muon
+        SET ngaytra = @NgayTra, ghichu = @GhiChu
+        WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach;
+
+        UPDATE sach
+        SET tinhtrang = CASE
+                WHEN @TinhTrangSauTra = N'Tốt' THEN N'Có thể mượn'
+                WHEN @TinhTrangSauTra = N'Hỏng' THEN N'Hỏng'
+                WHEN @TinhTrangSauTra = N'Mất' THEN N'Mất'
+                ELSE @TinhTrangSauTra
+            END,
+            trangthai = CASE
+                WHEN @TinhTrangSauTra = N'Tốt' THEN N'Trong kho'
+                ELSE @TinhTrangSauTra
+            END,
+            sophieumuonhientai = NULL,
+            ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
+        WHERE masach = @MaSach;
+
+        UPDATE sinh_vien
+        SET sosachdangmuon = CASE WHEN sosachdangmuon > 0 THEN sosachdangmuon - 1 ELSE 0 END
+        WHERE masinhvien = @MaSinhVien;
+
+        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND ngaytra IS NULL)
+        BEGIN
+            UPDATE phieu_muon
+            SET trangthaiphieu = N'Đã trả', ngayhoantat = @NgayTra
+            WHERE sophieumuon = @SoPhieuMuon;
+        END
+
+        EXEC dbo.sp_DongBoDauSach;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;
+GO
+
 CREATE PROCEDURE sp_ThongKeViPhamMuonTraTheoThang
     @Thang INT,
     @Nam INT,
@@ -1301,21 +1374,6 @@ END;
 GO
 
 PRINT N'DA TAO XONG PHAN LOI DATABASE QL_ThuVien_CSDLNC';
-GO
-
-CREATE TYPE dbo.DanhSachSachPhatHongMatType AS TABLE
-(
-    masach VARCHAR(20),
-    tinhtrang NVARCHAR(50),
-    mucdo NVARCHAR(100),
-    phiphat DECIMAL(18,2)
-);
-GO
-
-CREATE TYPE dbo.DanhSachSachPhatQuaHanType AS TABLE
-(
-    masach VARCHAR(20)
-);
 GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_ThongKeSachHongMatTrongThang

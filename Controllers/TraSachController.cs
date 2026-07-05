@@ -87,6 +87,23 @@ public class TraSachController : Controller
             return RedirectToAction(nameof(Index), new { soPhieuMuon = model.SoPhieuMuon });
         }
 
+        if (model.TinhTrangSauTra != "Tốt")
+        {
+            TempData["ErrorMessage"] = "Sách hỏng, mất hoặc quá hạn phải lập phiếu phạt tại màn hình PhieuPhat; cập nhật trả sách chỉ dùng cho trả bình thường.";
+            return RedirectToAction(nameof(Index), new { soPhieuMuon = model.SoPhieuMuon });
+        }
+
+        var hanTra = await _db.PhieuMuons
+            .Where(x => x.Sophieumuon == model.SoPhieuMuon)
+            .Select(x => x.Hantra)
+            .FirstOrDefaultAsync();
+
+        if (hanTra != default && DateOnly.FromDateTime(model.NgayTra.Date) > hanTra)
+        {
+            TempData["ErrorMessage"] = "Sách quá hạn phải lập phiếu phạt quá hạn; cập nhật trả sách chỉ dùng cho trả đúng hạn.";
+            return RedirectToAction(nameof(Index), new { soPhieuMuon = model.SoPhieuMuon });
+        }
+
         try
         {
             await CapNhatTraSachAsync(model);

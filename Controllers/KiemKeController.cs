@@ -58,6 +58,17 @@ public class KiemKeController : Controller
 
         if (sach == null)
             ModelState.AddModelError(nameof(model.Masach), "Mã sách không tồn tại.");
+        else
+        {
+            var hasOpenLoan = await _context.CtPhieuMuons
+                .AnyAsync(x => x.Masach == model.Masach && x.Ngaytra == null);
+
+            if (model.Tinhtrang == "Đang mượn" && !hasOpenLoan)
+                ModelState.AddModelError(nameof(model.Tinhtrang), "Chỉ được chọn Đang mượn khi sách đang thuộc một phiếu mượn chưa trả.");
+
+            if (model.Tinhtrang != "Đang mượn" && hasOpenLoan)
+                ModelState.AddModelError(nameof(model.Tinhtrang), "Sách đang được mượn. Hãy cập nhật trả sách và lập phiếu phạt nếu cần, không đổi trạng thái bằng kiểm kê.");
+        }
 
         if (!ModelState.IsValid)
         {
@@ -94,33 +105,6 @@ public class KiemKeController : Controller
         sach.Trangthai = tinhTrang == "Có thể mượn" ? "Trong kho" : tinhTrang;
         sach.Sophieumuonhientai = tinhTrang == "Đang mượn" ? sach.Sophieumuonhientai : null;
         sach.Ngaycapnhattrangthai = DateOnly.FromDateTime(DateTime.Today);
-
-        if (tinhTrang != "Đang mượn")
-        {
-            var openLoanDetails = await _context.CtPhieuMuons
-                .Include(x => x.SophieumuonNavigation)
-                .ThenInclude(x => x.MasinhvienNavigation)
-                .Where(x => x.Masach == model.Masach && x.Ngaytra == null)
-                .ToListAsync();
-
-            foreach (var detail in openLoanDetails)
-            {
-                detail.Ngaytra = DateOnly.FromDateTime(DateTime.Today);
-                detail.Ghichu = "Đóng bởi kiểm kê: " + tinhTrang;
-
-                var loan = detail.SophieumuonNavigation;
-                if (loan.MasinhvienNavigation != null && loan.MasinhvienNavigation.Sosachdangmuon > 0)
-                    loan.MasinhvienNavigation.Sosachdangmuon--;
-
-                await _context.Entry(loan).Collection(x => x.CtPhieuMuons).LoadAsync();
-
-                if (loan.CtPhieuMuons.All(x => x.Ngaytra != null))
-                {
-                    loan.Trangthaiphieu = "Đã trả";
-                    loan.Ngayhoantat = DateOnly.FromDateTime(DateTime.Today);
-                }
-            }
-        }
 
         _context.PhieuKiemKes.Add(phieu);
         _context.CtPhieuKiemKes.Add(chiTiet);

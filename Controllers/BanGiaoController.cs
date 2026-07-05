@@ -103,16 +103,23 @@ public class BanGiaoController : Controller
         };
 
         var nextSachNumber = await GetNextSachNumberAsync();
+        var tenNhaXuatBan = string.IsNullOrWhiteSpace(dauSach!.Manhaxuatban)
+            ? null
+            : await _db.NhaXuatBans
+                .Where(x => x.Manhaxuatban == dauSach.Manhaxuatban)
+                .Select(x => x.Tennhaxuatban)
+                .FirstOrDefaultAsync();
+
         for (var i = 0; i < model.Soluongsachmoidausach; i++)
         {
             _db.Saches.Add(new Sach
             {
                 Masach = "S" + (nextSachNumber + i).ToString("000"),
-                Madausach = dauSach!.Madausach,
+                Madausach = dauSach.Madausach,
                 Tensach = dauSach.Tendausach,
                 Theloai = dauSach.Theloai,
                 Tacgia = dauSach.Tacgia,
-                Nhaxuatban = dauSach.Manhaxuatban,
+                Nhaxuatban = tenNhaXuatBan ?? dauSach.Manhaxuatban,
                 Namxuatban = dauSach.Namxuatban,
                 Tinhtrang = "Có thể mượn",
                 Trangthai = "Trong kho",

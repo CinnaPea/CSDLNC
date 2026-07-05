@@ -6,6 +6,7 @@ using CSDLNC.Data;
 
 namespace CSDLNC.Controllers
 {
+    [Authorize]
     public class ThongKeKhoController : Controller
     {
         private readonly ThuVienDbContext _db;
