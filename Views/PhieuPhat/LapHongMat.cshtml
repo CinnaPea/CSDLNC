@@ -1,0 +1,79 @@
+﻿@model IEnumerable<CSDLNC.Models.DanhSachPhieuPhatHongMatViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách phiếu phạt hỏng, mất";
+}
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="card-title mb-1">Danh sách phiếu phạt hỏng, mất</h3>
+                    <p class="text-muted mb-0">
+                        Hiển thị các phiếu phạt hỏng, mất đã lập trong CSDL.
+                    </p>
+                </div>
+
+                <a asp-controller="PhieuPhat"
+                   asp-action="TaoHongMat"
+                   class="btn btn-primary">
+                    + Lập phiếu mới
+                </a>
+            </div>
+
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Số phiếu phạt</th>
+                        <th>Ngày lập</th>
+                        <th>Số phiếu mượn</th>
+                        <th>Mã sinh viên</th>
+                        <th>Người lập</th>
+                        <th>Tổng phạt</th>
+                        <th>Số sách phạt</th>
+                        <th style="width: 180px;">Thao tác</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @{
+                        int stt = 1;
+                    }
+
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@stt</td>
+                            <td>@item.SoPhieuPhatHongMat</td>
+                            <td>@item.NgayLap.ToString("dd/MM/yyyy")</td>
+                            <td>@item.SoPhieuMuonTra</td>
+                            <td>@item.MaSinhVien</td>
+                            <td>@item.TenNguoiDung</td>
+                            <td>@item.TongPhat.ToString("N0")</td>
+                            <td>@item.SoSachPhat</td>
+                            <td>
+                                <a asp-controller="PhieuPhat"
+                                   asp-action="ChiTietHongMat"
+                                   asp-route-id="@item.SoPhieuPhatHongMat"
+                                   class="btn btn-sm btn-info">
+                                    Xem
+                                </a>
+
+                                <a asp-controller="PhieuPhat"
+                                   asp-action="SuaHongMat"
+                                   asp-route-id="@item.SoPhieuPhatHongMat"
+                                   class="btn btn-sm btn-warning">
+                                    Sửa
+                                </a>
+                            </td>
+                        </tr>
+
+                        stt++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

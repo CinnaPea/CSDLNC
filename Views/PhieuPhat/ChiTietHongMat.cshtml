@@ -1,0 +1,78 @@
+﻿@model CSDLNC.Models.ChiTietPhieuPhatHongMatViewModel
+
+@{
+    ViewData["Title"] = "Chi tiết phiếu phạt hỏng, mất";
+}
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-3">Chi tiết phiếu phạt hỏng, mất</h3>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <b>Số phiếu phạt:</b> @Model.SoPhieuPhatHongMat
+                </div>
+
+                <div class="col-md-4">
+                    <b>Ngày lập:</b> @Model.NgayLap.ToString("dd/MM/yyyy")
+                </div>
+
+                <div class="col-md-4">
+                    <b>Số phiếu mượn:</b> @Model.SoPhieuMuonTra
+                </div>
+
+                <div class="col-md-4 mt-2">
+                    <b>Mã sinh viên:</b> @Model.MaSinhVien
+                </div>
+
+                <div class="col-md-4 mt-2">
+                    <b>Người lập:</b> @Model.TenNguoiDung
+                </div>
+
+                <div class="col-md-4 mt-2">
+                    <b>Tổng phạt:</b> @Model.TongPhat.ToString("N0")
+                </div>
+            </div>
+
+            <h5>Chi tiết sách bị phạt</h5>
+
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã sách</th>
+                        <th>Tên sách</th>
+                        <th>Tình trạng</th>
+                        <th>Mức độ</th>
+                        <th>Phí phạt</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @{
+                        int stt = 1;
+                    }
+
+                    @foreach (var ct in Model.DanhSachChiTiet)
+                    {
+                            <tr>
+                                <td>@stt</td>
+                                <td>@ct.MaSach</td>
+                                <td>@ct.TenSach</td>
+                                <td>@ct.TinhTrang</td>
+                                <td>@ct.MucDo</td>
+                                <td>@ct.PhiPhat.ToString("N0")</td>
+                            </tr>
+
+                        stt++;
+                    }
+                </tbody>
+            </table>
+
+            <a asp-controller="PhieuPhat" asp-action="LapHongMat" class="btn btn-secondary">
+                Quay lại danh sách
+            </a>
+        </div>
+    </div>
+</div>

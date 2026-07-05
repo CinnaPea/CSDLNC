@@ -92,8 +92,8 @@
                                     </a>
                                 </li>
                             }
-
-                            @if (canCatalog || canPhucBorrow || canPhucReturn || canFine)
+                            @*MỚI BỔ SUNG *@
+                            @if (canCatalog || canBorrow || canReturn || canFine || canReport || canAdmin)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
@@ -129,16 +129,34 @@
                                         </a>
                                     </li>
                                 }
-
-                                @if (canFine)
+                          
+                                @if (canFine || canAdmin)
                                 {
                                     <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="Index">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapHongMat">
                                             <iconify-icon icon="solar:bill-list-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Phiếu phạt</span>
+                                            <span class="hide-menu">Lập phạt hỏng, mất</span>
+                                        </a>
+                                    </li>
+
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapQuaHan">
+                                            <iconify-icon icon="solar:clock-circle-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Lập phạt quá hạn</span>
                                         </a>
                                     </li>
                                 }
+
+                                @if (canReport || canAdmin)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="ThongKeHongMat">
+                                            <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">TK sách hỏng, mất</span>
+                                        </a>
+                                    </li>
+                                }
+
                             }
 
                             @if (canInventory)

@@ -1,0 +1,65 @@
+﻿@{
+    ViewData["Title"] = "Phiếu phạt";
+}
+
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+            <h3 class="card-title mb-3">Quản lý phiếu phạt</h3>
+            <p class="text-muted">
+                Chọn chức năng cần thực hiện.
+            </p>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="card border">
+                        <div class="card-body">
+                            <h5>Lập phiếu phạt hỏng, mất</h5>
+                            <p class="text-muted">
+                                Lập phiếu phạt khi sách bị hỏng hoặc mất.
+                            </p>
+                            <a asp-controller="PhieuPhat"
+                               asp-action="LapHongMat"
+                               class="btn btn-primary">
+                                Vào chức năng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border">
+                        <div class="card-body">
+                            <h5>Lập phiếu phạt quá hạn</h5>
+                            <p class="text-muted">
+                                Lập phiếu phạt khi sinh viên trả sách quá hạn.
+                            </p>
+                            <a asp-controller="PhieuPhat"
+                               asp-action="LapQuaHan"
+                               class="btn btn-warning">
+                                Vào chức năng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card border">
+                        <div class="card-body">
+                            <h5>Thống kê sách hỏng, mất</h5>
+                            <p class="text-muted">
+                                Thống kê sách hỏng, mất theo tháng.
+                            </p>
+                            <a asp-controller="PhieuPhat"
+                               asp-action="ThongKeHongMat"
+                               class="btn btn-success">
+                                Vào chức năng
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
