@@ -111,16 +111,6 @@
                                     <span class="hide-menu">ND002 - Phúc</span>
                                 </li>
 
-                                @if (canCatalog)
-                                {
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="Sach" asp-action="Index">
-                                            <iconify-icon icon="solar:book-2-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Danh mục sách</span>
-                                        </a>
-                                    </li>
-                                }
-
                                 @if (canPhucBorrow)
                                 {
                                     <li class="sidebar-item">
@@ -158,6 +148,16 @@
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
                                     <span class="hide-menu">ND003 - Quang</span>
                                 </li>
+
+                                @if (canCatalog)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="Sach" asp-action="Index">
+                                            <iconify-icon icon="solar:book-2-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Danh mục sách</span>
+                                        </a>
+                                    </li>
+                                }
 
                                 <li class="sidebar-item">
                                     <a class="sidebar-link" asp-controller="BanGiao" asp-action="Create">

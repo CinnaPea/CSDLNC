@@ -24,7 +24,7 @@ namespace CSDLNC.Controllers
             var actionName = context.ActionDescriptor.RouteValues["action"];
             var isReportAction = string.Equals(actionName, nameof(ThongKeHongMat), StringComparison.OrdinalIgnoreCase);
             var canManageFines = User.HasClaim("Permission", "Q005") || User.HasClaim("Permission", "Q001");
-            var canViewFineReports = canManageFines || User.HasClaim("Permission", "Q009");
+            var canViewFineReports = User.HasClaim("Permission", "Q009") || User.HasClaim("Permission", "Q001");
 
             if ((isReportAction && !canViewFineReports) || (!isReportAction && !canManageFines))
             {

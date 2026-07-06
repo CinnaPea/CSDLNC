@@ -1,4 +1,5 @@
 using CSDLNC.Data;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +10,11 @@ namespace CSDLNC
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+            builder.Logging.AddDebug();
+            builder.Services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "obj", "data-protection-keys")));
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
@@ -34,7 +40,6 @@ namespace CSDLNC
                 options.AddPolicy("CanViewFineReports", policy =>
                     policy.RequireAssertion(context =>
                         context.User.HasClaim("Permission", "Q009") ||
-                        context.User.HasClaim("Permission", "Q005") ||
                         context.User.HasClaim("Permission", "Q001")));
 
                 options.AddPolicy("CanManageUsers", policy =>
@@ -53,7 +58,10 @@ namespace CSDLNC
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseHttpsRedirection();
+            }
             app.UseStaticFiles();
 
             app.UseRouting();

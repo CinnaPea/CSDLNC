@@ -20,6 +20,7 @@
 
     <form asp-action="Edit" method="post">
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
     <div class="row g-3">
 
@@ -34,11 +35,13 @@
                 <div class="mb-3">
                     <label>Tên đăng nhập</label>
                     <input asp-for="Tendangnhap" class="form-control" />
+                    <span asp-validation-for="Tendangnhap" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
                     <label>Họ tên</label>
                     <input asp-for="Tennguoidung" class="form-control" />
+                    <span asp-validation-for="Tennguoidung" class="text-danger"></span>
                 </div>
 
                 <div class="mb-3">
@@ -49,6 +52,7 @@
                             class="form-control"
                             style="height: 160px;">
                     </select>
+                    <span asp-validation-for="SelectedGroups" class="text-danger"></span>
                 </div>
 
             </div>
@@ -114,3 +118,7 @@
     </form>
 
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -104,6 +104,14 @@ public class NguoiDungController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(UserCreateEditViewModel vm)
     {
+        vm.SelectedGroups ??= new();
+
+        if (string.IsNullOrWhiteSpace(vm.Matkhau))
+            ModelState.AddModelError(nameof(vm.Matkhau), "Mat khau la bat buoc khi tao nguoi dung.");
+
+        if (await _db.NguoiDungs.AnyAsync(x => x.Tendangnhap == vm.Tendangnhap))
+            ModelState.AddModelError(nameof(vm.Tendangnhap), "Ten dang nhap da ton tai.");
+
         if (!ModelState.IsValid)
         {
             vm.AvailableGroups = await GetAvailableGroups();
@@ -112,10 +120,10 @@ public class NguoiDungController : Controller
 
         var user = new NguoiDung
         {
-            Manguoidung = Guid.NewGuid().ToString("N")[..10],
+            Manguoidung = await GenerateNextUserIdAsync(),
             Tendangnhap = vm.Tendangnhap,
             Tennguoidung = vm.Tennguoidung,
-            Matkhau = vm.Matkhau ?? string.Empty // (later: hash this)
+            Matkhau = vm.Matkhau! // (later: hash this)
         };
 
         _db.NguoiDungs.Add(user);
@@ -166,6 +174,11 @@ public class NguoiDungController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(UserCreateEditViewModel vm)
     {
+        vm.SelectedGroups ??= new();
+
+        if (await _db.NguoiDungs.AnyAsync(x => x.Tendangnhap == vm.Tendangnhap && x.Manguoidung != vm.Manguoidung))
+            ModelState.AddModelError(nameof(vm.Tendangnhap), "Ten dang nhap da ton tai.");
+
         if (!ModelState.IsValid)
         {
             vm.AvailableGroups = await GetAvailableGroups();
@@ -174,9 +187,21 @@ public class NguoiDungController : Controller
 
         var user = await _db.NguoiDungs
             .Include(x => x.Manhoms)
+                .ThenInclude(g => g.Maquyens)
+            .Include(x => x.Maquyens)
             .FirstOrDefaultAsync(x => x.Manguoidung == vm.Manguoidung);
 
         if (user == null) return NotFound();
+
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (user.Manguoidung == currentUserId && !await KeepsUserManagementAccessAsync(user, vm.SelectedGroups))
+        {
+            ModelState.AddModelError(nameof(vm.SelectedGroups), "Khong the tu go quyen quan tri nguoi dung cua tai khoan dang dang nhap.");
+            vm.AvailableGroups = await GetAvailableGroups();
+            vm.EffectivePermissions = await GetEffectivePermissions(user.Manguoidung);
+            vm.GroupNames = user.Manhoms.Select(x => x.Tennhom).ToList();
+            return View(vm);
+        }
 
         user.Tendangnhap = vm.Tendangnhap;
         user.Tennguoidung = vm.Tennguoidung;
@@ -244,5 +269,34 @@ public class NguoiDungController : Controller
                 Text = g.Tennhom
             })
             .ToListAsync();
+    }
+
+    private async Task<string> GenerateNextUserIdAsync()
+    {
+        var ids = await _db.NguoiDungs
+            .Where(x => x.Manguoidung.StartsWith("ND"))
+            .Select(x => x.Manguoidung)
+            .ToListAsync();
+
+        var nextNumber = ids
+            .Select(x => int.TryParse(x.Substring(2), out var number) ? number : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+
+        return "ND" + nextNumber.ToString("000");
+    }
+
+    private async Task<bool> KeepsUserManagementAccessAsync(NguoiDung user, List<string> selectedGroups)
+    {
+        var directPermissions = user.Maquyens.Select(x => x.Maquyen);
+        var selectedGroupPermissions = await _db.NhomNguoiDungs
+            .Where(g => selectedGroups.Contains(g.Manhom))
+            .SelectMany(g => g.Maquyens)
+            .Select(q => q.Maquyen)
+            .ToListAsync();
+
+        return directPermissions
+            .Concat(selectedGroupPermissions)
+            .Any(permission => permission == "Q001" || permission == "Q010");
     }
 }
