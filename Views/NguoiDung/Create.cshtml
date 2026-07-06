@@ -1,0 +1,48 @@
+@model CSDLNC.Models.Admin.UserCreateEditViewModel
+
+<div class="panel-card">
+    <h4>Thêm người dùng</h4>
+
+    <form asp-action="Create" method="post">
+
+        <div class="row g-3">
+
+            <div class="col-md-6">
+                <label>Tên đăng nhập</label>
+                <input asp-for="Tendangnhap" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label>Họ tên</label>
+                <input asp-for="Tennguoidung" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label>Mật khẩu</label>
+                <input asp-for="Matkhau" type="password" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label>Nhóm quyền (Group-based)</label>
+
+                <select asp-for="SelectedGroups"
+                        asp-items="Model.AvailableGroups"
+                        multiple
+                        class="form-select"
+                        style="height: 140px;">
+                </select>
+
+                <small class="text-muted">
+                    Giữ Ctrl để chọn nhiều nhóm
+                </small>
+            </div>
+
+        </div>
+
+        <div class="mt-3">
+            <button class="btn btn-success">Tạo user</button>
+            <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
+        </div>
+
+    </form>
+</div>

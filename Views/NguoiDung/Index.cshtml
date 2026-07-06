@@ -1,0 +1,118 @@
+@model List<CSDLNC.Models.NguoiDung>
+
+<div class="panel-card">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Quản lý người dùng</h4>
+
+        <a asp-action="Create" class="btn btn-success">
+            + Thêm người dùng
+        </a>
+    </div>
+
+    <!-- FILTER BAR -->
+    <form method="get" class="row g-2 mb-3">
+
+        <div class="col-md-5">
+            <input name="keyword"
+                   class="form-control"
+                   placeholder="Tìm theo tên đăng nhập / họ tên..." />
+        </div>
+
+        <div class="col-md-4">
+            <select name="group" class="form-select">
+                <option value="">-- Tất cả nhóm --</option>
+                @* optional: inject groups later *@
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex gap-2">
+            <button class="btn btn-primary w-100">Lọc</button>
+            <a asp-action="Index" class="btn btn-outline-secondary w-100">Reset</a>
+        </div>
+
+    </form>
+
+    <!-- TABLE -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+
+            <thead class="table-light">
+                <tr>
+                    <th>Mã</th>
+                    <th>Tài khoản</th>
+                    <th>Họ tên</th>
+                    <th>Nhóm quyền</th>
+                    <th width="180">Thao tác</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var u in Model)
+                    {
+                        <tr>
+                            <td>@u.Manguoidung</td>
+                            <td>@u.Tendangnhap</td>
+                            <td>@u.Tennguoidung</td>
+
+                            <!-- GROUP BADGES -->
+                            <td>
+                                @if (u.Manhoms != null && u.Manhoms.Any())
+                                {
+                                    foreach (var g in u.Manhoms)
+                                    {
+                                        <span class="badge bg-primary me-1">
+                                            @g.Tennhom
+                                        </span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Chưa phân nhóm</span>
+                                }
+                            </td>
+
+                            <!-- ACTIONS -->
+                            <td class="d-flex gap-2">
+
+                                <a asp-action="Edit"
+                                   asp-route-id="@u.Manguoidung"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Sửa
+                                </a>
+
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="confirmDelete('@u.Manguoidung')">
+                                    Xóa
+                                </button>
+
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-4">
+                            Không có dữ liệu người dùng
+                        </td>
+                    </tr>
+                }
+
+            </tbody>
+
+        </table>
+    </div>
+</div>
+
+<script>
+    function confirmDelete(id) {
+        if (confirm("Xác nhận xóa người dùng này?")) {
+            window.location.href = '/NguoiDung/Delete/' + id;
+        }
+    }
+</script>
