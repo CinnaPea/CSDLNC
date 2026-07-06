@@ -17,8 +17,8 @@
             <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
         </a>
         <div>
-            <div class="borrow-eyebrow">Nghiệp vụ thủ thư</div>
             <h1>Cập nhật trả sách</h1>
+            <p>Chọn phiếu còn sách chưa trả, xác nhận ngày trả và đưa sách đủ điều kiện về kho.</p>
         </div>
     </div>
 
@@ -213,6 +213,7 @@
                     @foreach (var item in Model.ChiTiet)
                     {
                         var returned = item.NgayTra.HasValue;
+                        var overdue = first.HanTra.Date < DateTime.Today;
                         <tr>
                             <td class="fw-semibold">@item.MaSach</td>
                             <td>
@@ -226,12 +227,33 @@
                                 {
                                     <span class="badge bg-success">Đã trả</span>
                                 }
+                                else if (overdue)
+                                {
+                                    <div class="return-route-note mb-2">
+                                        Phiếu này đã quá hạn. Không cập nhật trả thường tại đây; hãy lập phiếu phạt quá hạn.
+                                    </div>
+                                    <div class="return-actions">
+                                        <a asp-controller="PhieuPhat"
+                                           asp-action="TaoQuaHan"
+                                           class="btn btn-outline-danger btn-sm">
+                                            <iconify-icon icon="solar:bill-list-line-duotone"></iconify-icon>
+                                            Lập phiếu phạt quá hạn
+                                        </a>
+                                        <a asp-controller="PhieuPhat"
+                                           asp-action="TaoHongMat"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <iconify-icon icon="solar:danger-triangle-line-duotone"></iconify-icon>
+                                            Hỏng/Mất
+                                        </a>
+                                    </div>
+                                }
                                 else
                                 {
                                     <form asp-action="CapNhat" method="post" class="row g-2">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="SoPhieuMuon" value="@item.SoPhieuMuon" />
                                         <input type="hidden" name="MaSach" value="@item.MaSach" />
+                                        <input type="hidden" name="TinhTrangSauTra" value="Tốt" />
 
                                         <div class="col-4">
                                             <input type="date"
@@ -240,15 +262,26 @@
                                                    class="form-control form-control-sm" />
                                         </div>
                                         <div class="col-3">
-                                            <select name="TinhTrangSauTra" class="form-select form-select-sm">
-                                                <option value="Tốt">Tốt</option>
-                                            </select>
+                                            <span class="return-mode-chip">Trả bình thường</span>
                                         </div>
                                         <div class="col-3">
                                             <input name="GhiChu" class="form-control form-control-sm" maxlength="255" placeholder="Ghi chú" />
                                         </div>
                                         <div class="col-2 d-grid">
                                             <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="return-route-note">
+                                                Nếu sách hỏng hoặc mất, không lưu ở dòng này. Chuyển sang màn lập phiếu phạt hỏng/mất để đúng luồng dữ liệu.
+                                            </div>
+                                            <div class="return-actions mt-2">
+                                                <a asp-controller="PhieuPhat"
+                                                   asp-action="TaoHongMat"
+                                                   class="btn btn-outline-secondary btn-sm">
+                                                    <iconify-icon icon="solar:danger-triangle-line-duotone"></iconify-icon>
+                                                    Lập phiếu phạt hỏng/mất
+                                                </a>
+                                            </div>
                                         </div>
                                     </form>
                                 }

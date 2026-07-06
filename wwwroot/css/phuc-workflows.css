@@ -126,7 +126,7 @@
 }
 
 .borrow-titlebar {
-    align-items: center;
+    align-items: flex-start;
     background: #ffffff;
     border-bottom: 2px solid #d3e0e6;
     display: flex;
@@ -137,11 +137,18 @@
 }
 
 .borrow-titlebar h1 {
-    font-size: 22px;
-    font-weight: 800;
+    color: #17202a;
+    font-size: 28px;
+    font-weight: 700;
     letter-spacing: 0;
     margin: 0;
-    text-transform: uppercase;
+    text-transform: none;
+}
+
+.borrow-titlebar p {
+    color: #6b7280;
+    font-size: 15px;
+    margin: 4px 0 0;
 }
 
 .borrow-eyebrow {
@@ -591,6 +598,54 @@
     border-top: 1px solid #e6eef2;
     margin-top: 18px;
     padding-top: 14px;
+}
+
+.return-mode-chip {
+    align-items: center;
+    background: #eef7f1;
+    border: 1px solid #bfdccb;
+    border-radius: 8px;
+    color: #17663a;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 800;
+    min-height: 31px;
+    padding: 6px 10px;
+}
+
+.return-route-note {
+    background: #fff8ea;
+    border: 1px solid #f1d49a;
+    border-radius: 8px;
+    color: #7a4d0b;
+    font-size: 13px;
+    font-weight: 600;
+    margin-top: 8px;
+    padding: 10px 12px;
+}
+
+.return-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.return-actions .btn {
+    align-items: center;
+    display: inline-flex;
+    gap: 6px;
+}
+
+.report-context-note {
+    background: #f7fbfd;
+    border: 1px solid #d9e4ea;
+    border-radius: 8px;
+    color: #52656f;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    padding: 12px 14px;
 }
 
 .print-only {
