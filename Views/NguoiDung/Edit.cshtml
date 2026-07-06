@@ -1,44 +1,111 @@
 @model CSDLNC.Models.Admin.UserCreateEditViewModel
 
-<div class="panel-card">
-    <h4>Chỉnh sửa người dùng</h4>
+@{
+    ViewData["Title"] = "Chỉnh sửa người dùng";
+}
 
-    <form asp-action="Edit" method="post">
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
 
-        <input type="hidden" asp-for="Manguoidung" />
+<div class="kho-dashboard">
 
-        <!-- SAME FIELDS -->
-        <!-- copy from Create -->
+    <!-- HEADER -->
+    <div class="page-heading">
+        <div>
+            <h2>Chỉnh sửa người dùng</h2>
+            <p>Quản lý nhóm và quyền hệ thống</p>
+        </div>
+    </div>
 
-        <div class="row g-3">
+    <div class="row g-3">
 
-            <div class="col-md-6">
-                <label>Tên đăng nhập</label>
-                <input asp-for="Tendangnhap" class="form-control" />
+        <!-- LEFT FORM -->
+        <div class="col-lg-8">
+            <div class="panel-card">
+
+                <h5>Thông tin</h5>
+
+                <input type="hidden" asp-for="Manguoidung" />
+
+                <div class="mb-3">
+                    <label>Tên đăng nhập</label>
+                    <input asp-for="Tendangnhap" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Họ tên</label>
+                    <input asp-for="Tennguoidung" class="form-control" />
+                </div>
+
+                <div class="mb-3">
+                    <label>Nhóm quyền</label>
+                    <select asp-for="SelectedGroups"
+                            asp-items="Model.AvailableGroups"
+                            multiple
+                            class="form-control"
+                            style="height: 160px;">
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT INSIGHT PANEL -->
+        <div class="col-lg-4">
+
+            <!-- GROUPS -->
+            <div class="panel-card">
+                <h5>Nhóm hiện tại</h5>
+
+                @if (Model.GroupNames.Any())
+                {
+                    @foreach (var g in Model.GroupNames)
+                    {
+                        <span class="badge bg-primary me-1">@g</span>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">Chưa có nhóm</span>
+                }
             </div>
 
-            <div class="col-md-6">
-                <label>Họ tên</label>
-                <input asp-for="Tennguoidung" class="form-control" />
+            <!-- PERMISSIONS -->
+            <div class="panel-card mt-3">
+                <h5>Quyền thực tế</h5>
+
+                @if (Model.EffectivePermissions.Any())
+                {
+                    foreach (var p in Model.EffectivePermissions)
+                    {
+                        <div class="summary-line">
+                            <span>@p</span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">Không có quyền</span>
+                }
             </div>
 
-            <div class="col-md-6">
-                <label>Nhóm quyền</label>
+            <!-- ACTIONS -->
+            <div class="panel-card mt-3">
 
-                <select asp-for="SelectedGroups"
-                        asp-items="Model.AvailableGroups"
-                        multiple
-                        class="form-select"
-                        style="height: 140px;">
-                </select>
+                <button type="submit" class="btn btn-filter-primary w-100 mb-2">
+                    Lưu thay đổi
+                </button>
+
+                <a asp-action="Index"
+                   class="btn btn-filter-secondary w-100">
+                    Quay lại
+                </a>
+
             </div>
 
         </div>
 
-        <div class="mt-3">
-            <button class="btn btn-primary">Lưu thay đổi</button>
-            <a asp-action="Index" class="btn btn-secondary">Quay lại</a>
-        </div>
+    </div>
 
-    </form>
 </div>

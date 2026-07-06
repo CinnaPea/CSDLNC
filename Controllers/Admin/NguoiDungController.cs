@@ -16,11 +16,30 @@ public class NguoiDungController : Controller
         _db = db;
     }
 
+    private async Task<List<string>> GetEffectivePermissions(string userId)
+    {
+        var user = await _db.NguoiDungs
+            .Include(x => x.Manhoms)
+                .ThenInclude(g => g.Maquyens)
+            .FirstOrDefaultAsync(x => x.Manguoidung == userId);
+
+        if (user == null) return new();
+
+        return user.Manhoms
+            .SelectMany(g => g.Maquyens)
+            .Select(p => p.Tenquyen)
+            .Distinct()
+            .ToList();
+    }
+
     // =========================
     // LIST
     // =========================
-    public async Task<IActionResult> Index(string? keyword, string? group)
+    public async Task<IActionResult> Index(string? keyword, string? group, int page = 1)
     {
+        const int pageSize = 8;
+        page = Math.Max(page, 1);
+
         var query = _db.NguoiDungs
             .Include(x => x.Manhoms)
             .AsQueryable();
@@ -29,7 +48,7 @@ public class NguoiDungController : Controller
         {
             query = query.Where(x =>
                 x.Tendangnhap.Contains(keyword) ||
-                x.Tennguoidung.Contains(keyword));
+                (x.Tennguoidung != null && x.Tennguoidung.Contains(keyword)));
         }
 
         if (!string.IsNullOrEmpty(group))
@@ -38,9 +57,34 @@ public class NguoiDungController : Controller
                 x.Manhoms.Any(g => g.Manhom == group));
         }
 
-        var users = await query.ToListAsync();
+        var totalUsers = await query.CountAsync();
+        var totalPages = totalUsers == 0 ? 1 : (int)Math.Ceiling((double)totalUsers / pageSize);
+        page = Math.Min(page, totalPages);
 
-        return View(users);
+        var users = await query
+            .OrderBy(x => x.Manguoidung)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        var vm = new NguoiDungIndexViewModel
+        {
+            Users = users,
+            Keyword = keyword,
+            Group = group,
+            PageNumber = page,
+            PageSize = pageSize,
+            TotalUsers = totalUsers,
+            AvailableGroups = await _db.NhomNguoiDungs
+                .OrderBy(g => g.Manhom)
+                .Select(g => new SelectListItem
+                {
+                    Value = g.Manhom,
+                    Text = g.Tennhom
+                }).ToListAsync()
+        };
+
+        return View(vm);
     }
 
     // =========================
@@ -72,7 +116,7 @@ public class NguoiDungController : Controller
             Manguoidung = Guid.NewGuid().ToString("N")[..10],
             Tendangnhap = vm.Tendangnhap,
             Tennguoidung = vm.Tennguoidung,
-            Matkhau = vm.Matkhau // (later: hash this)
+            Matkhau = vm.Matkhau ?? string.Empty // (later: hash this)
         };
 
         _db.NguoiDungs.Add(user);
@@ -104,7 +148,7 @@ public class NguoiDungController : Controller
         {
             Manguoidung = user.Manguoidung,
             Tendangnhap = user.Tendangnhap,
-            Tennguoidung = user.Tennguoidung,
+            Tennguoidung = user.Tennguoidung ?? string.Empty,
 
             SelectedGroups = user.Manhoms.Select(x => x.Manhom).ToList(),
 
@@ -113,7 +157,9 @@ public class NguoiDungController : Controller
                 {
                     Value = g.Manhom,
                     Text = g.Tennhom
-                }).ToListAsync()
+                }).ToListAsync(),
+            EffectivePermissions = await GetEffectivePermissions(user.Manguoidung),
+            GroupNames = user.Manhoms.Select(x => x.Tennhom).ToList()
         };
 
         return View(vm);

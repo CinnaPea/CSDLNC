@@ -1,4 +1,12 @@
-@model List<CSDLNC.Models.NguoiDung>
+@model CSDLNC.Models.Admin.NguoiDungIndexViewModel
+
+@{
+    ViewData["Title"] = "Quản lý người dùng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/kiemke.css" asp-append-version="true" />
+}
 
 <div class="panel-card">
 
@@ -17,13 +25,19 @@
         <div class="col-md-5">
             <input name="keyword"
                    class="form-control"
+                   value="@Model.Keyword"
                    placeholder="Tìm theo tên đăng nhập / họ tên..." />
         </div>
 
         <div class="col-md-4">
             <select name="group" class="form-select">
                 <option value="">-- Tất cả nhóm --</option>
-                @* optional: inject groups later *@
+                @foreach (var group in Model.AvailableGroups)
+                {
+                    <option value="@group.Value" selected="@(group.Value == Model.Group)">
+                        @group.Text
+                    </option>
+                }
             </select>
         </div>
 
@@ -50,9 +64,9 @@
 
             <tbody>
 
-                @if (Model != null && Model.Any())
+                @if (Model.Users.Any())
                 {
-                    foreach (var u in Model)
+                    foreach (var u in Model.Users)
                     {
                         <tr>
                             <td>@u.Manguoidung</td>
@@ -107,6 +121,58 @@
 
         </table>
     </div>
+
+    @if (Model.TotalUsers > 0)
+    {
+        var firstItem = (Model.PageNumber - 1) * Model.PageSize + 1;
+        var lastItem = Math.Min(Model.PageNumber * Model.PageSize, Model.TotalUsers);
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+            <div class="text-muted small">
+                Hiển thị @firstItem-@lastItem / @Model.TotalUsers người dùng
+            </div>
+
+            @if (Model.TotalPages > 1)
+            {
+                <nav aria-label="Phân trang người dùng">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(Model.PageNumber <= 1 ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-keyword="@Model.Keyword"
+                               asp-route-group="@Model.Group"
+                               asp-route-page="@(Model.PageNumber - 1)">
+                                Trước
+                            </a>
+                        </li>
+
+                        @for (var pageNumber = 1; pageNumber <= Model.TotalPages; pageNumber++)
+                        {
+                            <li class="page-item @(pageNumber == Model.PageNumber ? "active" : "")">
+                                <a class="page-link"
+                                   asp-action="Index"
+                                   asp-route-keyword="@Model.Keyword"
+                                   asp-route-group="@Model.Group"
+                                   asp-route-page="@pageNumber">
+                                    @pageNumber
+                                </a>
+                            </li>
+                        }
+
+                        <li class="page-item @(Model.PageNumber >= Model.TotalPages ? "disabled" : "")">
+                            <a class="page-link"
+                               asp-action="Index"
+                               asp-route-keyword="@Model.Keyword"
+                               asp-route-group="@Model.Group"
+                               asp-route-page="@(Model.PageNumber + 1)">
+                                Sau
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    }
 </div>
 
 <script>

@@ -66,23 +66,20 @@
 
                     <nav class="sidebar-nav scroll-sidebar" data-simplebar="">
                         <ul id="sidebarnav">
-                            <li class="nav-small-cap">
-                                <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                                <span class="hide-menu">Tổng quan</span>
-                            </li>
-
-                            <li class="sidebar-item">
-                                <a class="sidebar-link" asp-controller="Home" asp-action="Index">
-                                    <iconify-icon icon="solar:home-2-line-duotone"></iconify-icon>
-                                    <span class="hide-menu">Dashboard</span>
-                                </a>
-                            </li>
+                            @* Reminder: sidebar is final integration territory. Admin/sidebar content may still change after teammate designs are merged. *@
 
                             @if (canAdmin)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                                    <span class="hide-menu">Quản trị</span>
+                                    <span class="hide-menu">ADMIN - ND001</span>
+                                </li>
+
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="Home" asp-action="Index">
+                                        <iconify-icon icon="solar:home-2-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Dashboard</span>
+                                    </a>
                                 </li>
 
                                 <li class="sidebar-item">
@@ -92,12 +89,26 @@
                                     </a>
                                 </li>
                             }
-                            @*MỚI BỔ SUNG *@
-                            @if (canCatalog || canPhucBorrow || canPhucReturn || canFine || canReport || canAdmin)
+                            else
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                                    <span class="hide-menu">Thủ thư nghiệp vụ</span>
+                                    <span class="hide-menu">Tổng quan</span>
+                                </li>
+
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" asp-controller="Home" asp-action="Index">
+                                        <iconify-icon icon="solar:home-2-line-duotone"></iconify-icon>
+                                        <span class="hide-menu">Dashboard</span>
+                                    </a>
+                                </li>
+                            }
+
+                            @if (canCatalog || canPhucBorrow || canPhucReturn || canPhucReport)
+                            {
+                                <li class="nav-small-cap">
+                                    <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
+                                    <span class="hide-menu">ND002 - Phúc</span>
                                 </li>
 
                                 @if (canCatalog)
@@ -129,41 +140,23 @@
                                         </a>
                                     </li>
                                 }
-                          
-                                @if (canFine || canAdmin)
+
+                                @if (canPhucReport)
                                 {
                                     <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapHongMat">
-                                            <iconify-icon icon="solar:bill-list-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Lập phạt hỏng, mất</span>
-                                        </a>
-                                    </li>
-
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapQuaHan">
-                                            <iconify-icon icon="solar:clock-circle-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">Lập phạt quá hạn</span>
-                                        </a>
-                                    </li>
-                                }
-
-                                @if (canReport || canAdmin)
-                                {
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="ThongKeHongMat">
+                                        <a class="sidebar-link" asp-controller="ThongKeViPhamMuonTra" asp-action="Index">
                                             <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
-                                            <span class="hide-menu">TK sách hỏng, mất</span>
+                                            <span class="hide-menu">Thống kê vi phạm</span>
                                         </a>
                                     </li>
                                 }
-
                             }
 
-                            @if (canInventory)
+                            @if (canInventory || canAdmin)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                                    <span class="hide-menu">Kho và kiểm kê</span>
+                                    <span class="hide-menu">ND003 - Quang</span>
                                 </li>
 
                                 <li class="sidebar-item">
@@ -182,25 +175,45 @@
 
                                 <li class="sidebar-item">
                                     <a class="sidebar-link" asp-controller="ThongKeKho" asp-action="SoLuongSach">
-                                        <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
+                                        <iconify-icon icon="solar:chart-square-line-duotone"></iconify-icon>
                                         <span class="hide-menu">Thống kê số lượng sách</span>
                                     </a>
                                 </li>
                             }
 
-                            @if (canPhucReport)
+                            @if (canFine || canReport || canAdmin)
                             {
                                 <li class="nav-small-cap">
                                     <iconify-icon icon="solar:menu-dots-linear" class="nav-small-cap-icon fs-4"></iconify-icon>
-                                    <span class="hide-menu">Quản lý và báo cáo</span>
+                                    <span class="hide-menu">ND004 - Hiếu</span>
                                 </li>
 
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" asp-controller="ThongKeViPhamMuonTra" asp-action="Index">
-                                        <iconify-icon icon="solar:chart-2-line-duotone"></iconify-icon>
-                                        <span class="hide-menu">Vi phạm mượn trả sách</span>
-                                    </a>
-                                </li>
+                                @if (canFine || canAdmin)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapHongMat">
+                                            <iconify-icon icon="solar:bill-list-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Phạt hỏng/mất</span>
+                                        </a>
+                                    </li>
+
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="LapQuaHan">
+                                            <iconify-icon icon="solar:calendar-mark-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Phạt quá hạn</span>
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (canReport || canAdmin)
+                                {
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" asp-controller="PhieuPhat" asp-action="ThongKeHongMat">
+                                            <iconify-icon icon="solar:chart-line-duotone"></iconify-icon>
+                                            <span class="hide-menu">Thống kê hỏng/mất</span>
+                                        </a>
+                                    </li>
+                                }
                             }
                         </ul>
                     </nav>
