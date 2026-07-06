@@ -12,6 +12,20 @@ public class ThongKeViPhamMuonTraViewModel
 
     public string LoaiViPham { get; set; } = "Tất cả";
 
+    public int TongViPham { get; set; }
+
+    public int ViPhamQuaHan { get; set; }
+
+    public int ViPhamHongMat { get; set; }
+
+    public int SoDocGiaViPham { get; set; }
+
+    public decimal TongTienPhat { get; set; }
+
+    public List<ThongKeChartItemViewModel> PhanBoLoaiViPham { get; set; } = new();
+
+    public List<ThongKeChartItemViewModel> TopDocGiaViPham { get; set; } = new();
+
     public List<ThongKeViPhamMuonTraItemViewModel> KetQua { get; set; } = new();
 }
 
@@ -34,4 +48,13 @@ public class ThongKeViPhamMuonTraItemViewModel
     public DateTime NgayLap { get; set; }
 
     public string GhiChu { get; set; } = "";
+}
+
+public class ThongKeChartItemViewModel
+{
+    public string Label { get; set; } = "";
+
+    public int Value { get; set; }
+
+    public decimal Amount { get; set; }
 }

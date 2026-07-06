@@ -3,17 +3,22 @@
 @{
     ViewData["Title"] = "Cập nhật trả sách";
     var first = Model.ChiTiet.FirstOrDefault();
+    var fromDate = Model.TuNgay?.ToString("yyyy-MM-dd");
+    var toDate = Model.DenNgay?.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
     <link rel="stylesheet" href="~/css/phuc-workflows.css" asp-append-version="true" />
 }
 
-<div class="container-fluid workflow-shell">
-    <div class="d-flex align-items-center justify-content-between mb-4">
+<div class="container-fluid workflow-shell borrow-page">
+    <div class="borrow-titlebar">
+        <a asp-controller="Home" asp-action="Index" class="borrow-back" title="Quay lại dashboard">
+            <iconify-icon icon="solar:arrow-left-linear"></iconify-icon>
+        </a>
         <div>
-            <h1 class="h3 mb-1">Cập nhật trả sách</h1>
-            <div class="text-muted">Cập nhật trả sách bình thường; vi phạm được lập tại phiếu phạt</div>
+            <div class="borrow-eyebrow">Nghiệp vụ thủ thư</div>
+            <h1>Cập nhật trả sách</h1>
         </div>
     </div>
 
@@ -32,25 +37,51 @@
         <div class="alert alert-info">@infoMessage</div>
     }
 
+    <section class="borrow-form-section">
+        <form asp-action="Index" method="get">
+            <div class="filter-grid">
+                <div class="borrow-search">
+                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    <input name="TuKhoa"
+                           value="@Model.TuKhoa"
+                           placeholder="Số phiếu, mã sinh viên hoặc tên sinh viên" />
+                </div>
+
+                <select name="SoPhieuMuon" asp-items="Model.PhieuMuonOptions" class="form-select">
+                    <option value="">-- Chọn phiếu còn sách chưa trả --</option>
+                </select>
+
+                <select name="TrangThaiHan" class="form-select">
+                    <option value="TatCa" selected="@(Model.TrangThaiHan == "TatCa")">Tất cả hạn trả</option>
+                    <option value="ConHan" selected="@(Model.TrangThaiHan == "ConHan")">Còn hạn</option>
+                    <option value="QuaHan" selected="@(Model.TrangThaiHan == "QuaHan")">Quá hạn</option>
+                </select>
+
+                <input name="TuNgay" value="@fromDate" type="date" class="form-control" title="Hạn trả từ" />
+                <input name="DenNgay" value="@toDate" type="date" class="form-control" title="Hạn trả đến" />
+
+                <select name="PageSize" class="form-select">
+                    <option value="8" selected="@(Model.PageSize == 8)">8 dòng</option>
+                    <option value="15" selected="@(Model.PageSize == 15)">15 dòng</option>
+                    <option value="30" selected="@(Model.PageSize == 30)">30 dòng</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary">
+                    <iconify-icon icon="solar:filter-line-duotone"></iconify-icon>
+                    Lọc / Xem phiếu
+                </button>
+
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                    Làm mới
+                </a>
+            </div>
+        </form>
+    </section>
+
     <div class="row g-4 mb-4">
         <div class="col-lg-5">
-            <form asp-action="Index" method="get" class="selection-panel h-100">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-8">
-                        <label for="soPhieuMuon" class="form-label">Số phiếu mượn</label>
-                        <select asp-for="SoPhieuMuon" asp-items="Model.PhieuMuonOptions" class="form-select" onchange="this.form.submit()">
-                            <option value="">-- Chọn phiếu còn sách chưa trả --</option>
-                        </select>
-                    </div>
-                    <div class="col-md-auto">
-                        <button type="submit" class="btn btn-primary">Xem phiếu</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="col-lg-7">
-            <div class="selection-panel">
+            <section class="selection-panel h-100">
                 <h2 class="h6 mb-3">Phiếu còn sách chưa trả</h2>
                 <div class="table-responsive">
                     <table class="table table-sm compact-table align-middle mb-0">
@@ -65,58 +96,108 @@
                         <tbody>
                             @foreach (var item in Model.PhieuMuonCanTra)
                             {
+                                var overdue = item.HanTra < DateOnly.FromDateTime(DateTime.Today);
                                 <tr>
                                     <td>
-                                        <a asp-action="Index" asp-route-soPhieuMuon="@item.SoPhieuMuon" class="fw-semibold">@item.SoPhieuMuon</a>
+                                        <a asp-action="Index"
+                                           asp-route-SoPhieuMuon="@item.SoPhieuMuon"
+                                           asp-route-TuKhoa="@Model.TuKhoa"
+                                           asp-route-TrangThaiHan="@Model.TrangThaiHan"
+                                           asp-route-TuNgay="@fromDate"
+                                           asp-route-DenNgay="@toDate"
+                                           asp-route-Page="@Model.Page"
+                                           asp-route-PageSize="@Model.PageSize"
+                                           class="fw-semibold">@item.SoPhieuMuon</a>
                                     </td>
                                     <td>
                                         <div>@item.MaSinhVien - @item.HoTen</div>
                                         <div class="text-muted small">@item.NgayMuon.ToString("dd/MM/yyyy")</div>
                                     </td>
-                                    <td>@item.HanTra.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <span class="@(overdue ? "text-danger fw-semibold" : "")">@item.HanTra.ToString("dd/MM/yyyy")</span>
+                                    </td>
                                     <td class="text-center">@item.SoSachChuaTra</td>
                                 </tr>
                             }
                             @if (!Model.PhieuMuonCanTra.Any())
                             {
                                 <tr>
-                                    <td colspan="4" class="text-muted">Không có phiếu cần trả</td>
+                                    <td colspan="4" class="text-muted">Không có phiếu cần trả phù hợp</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-            </div>
+
+                <div class="pagination-bar compact-pagination">
+                    <div class="text-muted">Trang @Model.Page / @Model.TotalPages</div>
+                    <div class="pagination-actions">
+                        <a asp-action="Index"
+                           asp-route-SoPhieuMuon="@Model.SoPhieuMuon"
+                           asp-route-TuKhoa="@Model.TuKhoa"
+                           asp-route-TrangThaiHan="@Model.TrangThaiHan"
+                           asp-route-TuNgay="@fromDate"
+                           asp-route-DenNgay="@toDate"
+                           asp-route-PageSize="@Model.PageSize"
+                           asp-route-Page="@(Model.Page - 1)"
+                           class="btn btn-outline-secondary btn-sm @(Model.HasPreviousPage ? "" : "disabled")">
+                            Trước
+                        </a>
+                        <a asp-action="Index"
+                           asp-route-SoPhieuMuon="@Model.SoPhieuMuon"
+                           asp-route-TuKhoa="@Model.TuKhoa"
+                           asp-route-TrangThaiHan="@Model.TrangThaiHan"
+                           asp-route-TuNgay="@fromDate"
+                           asp-route-DenNgay="@toDate"
+                           asp-route-PageSize="@Model.PageSize"
+                           asp-route-Page="@(Model.Page + 1)"
+                           class="btn btn-outline-secondary btn-sm @(Model.HasNextPage ? "" : "disabled")">
+                            Sau
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-7">
+            @if (first != null)
+            {
+                <section class="selection-panel h-100">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="text-muted small">Số phiếu</div>
+                            <div class="fw-semibold">@first.SoPhieuMuon</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-muted small">Sinh viên</div>
+                            <div class="fw-semibold">@first.MaSinhVien - @first.HoTen</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-muted small">Ngày mượn</div>
+                            <div class="fw-semibold">@first.NgayMuon.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-muted small">Hạn trả</div>
+                            <div class="fw-semibold">@first.HanTra.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="text-muted small">Trạng thái</div>
+                            <div class="fw-semibold">@first.TrangThaiPhieu</div>
+                        </div>
+                    </div>
+                </section>
+            }
+            else
+            {
+                <section class="selection-panel h-100 d-flex align-items-center justify-content-center text-muted">
+                    Chọn một phiếu còn sách chưa trả để cập nhật.
+                </section>
+            }
         </div>
     </div>
 
     @if (first != null)
     {
-        <div class="selection-panel mb-4">
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <div class="text-muted small">Số phiếu</div>
-                    <div class="fw-semibold">@first.SoPhieuMuon</div>
-                </div>
-                <div class="col-md-3">
-                    <div class="text-muted small">Sinh viên</div>
-                    <div class="fw-semibold">@first.MaSinhVien - @first.HoTen</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="text-muted small">Ngày mượn</div>
-                    <div class="fw-semibold">@first.NgayMuon.ToString("dd/MM/yyyy")</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="text-muted small">Hạn trả</div>
-                    <div class="fw-semibold">@first.HanTra.ToString("dd/MM/yyyy")</div>
-                </div>
-                <div class="col-md-2">
-                    <div class="text-muted small">Trạng thái</div>
-                    <div class="fw-semibold">@first.TrangThaiPhieu</div>
-                </div>
-            </div>
-        </div>
-
         <div class="table-responsive bg-white border rounded">
             <table class="table align-middle mb-0">
                 <thead>

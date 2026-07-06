@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Thống kê vi phạm mượn trả";
+    var maxLoaiViPham = Math.Max(1, Model.PhanBoLoaiViPham.Select(x => x.Value).DefaultIfEmpty(0).Max());
+    var maxDocGia = Math.Max(1, Model.TopDocGiaViPham.Select(x => x.Value).DefaultIfEmpty(0).Max());
 }
 
 @section Styles {
@@ -50,6 +52,97 @@
             </div>
         </div>
     </form>
+
+    <div class="row g-3 mb-4 no-print">
+        <div class="col-md-3">
+            <div class="metric-card metric-blue">
+                <div class="metric-label">Tổng vi phạm</div>
+                <div class="metric-value">@Model.TongViPham</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-amber">
+                <div class="metric-label">Quá hạn</div>
+                <div class="metric-value">@Model.ViPhamQuaHan</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-red">
+                <div class="metric-label">Hỏng/Mất</div>
+                <div class="metric-value">@Model.ViPhamHongMat</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card metric-green">
+                <div class="metric-label">Độc giả vi phạm</div>
+                <div class="metric-value">@Model.SoDocGiaViPham</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4 no-print">
+        <div class="col-lg-5">
+            <section class="dashboard-panel h-100">
+                <div class="dashboard-panel-header">
+                    <h2>Phân bố loại vi phạm</h2>
+                    <span>@Model.Thang/@Model.Nam</span>
+                </div>
+
+                <div class="chart-list">
+                    @foreach (var item in Model.PhanBoLoaiViPham)
+                    {
+                        var percent = item.Value * 100 / maxLoaiViPham;
+                        <div class="chart-row">
+                            <div class="chart-row-label">
+                                <span>@item.Label</span>
+                                <strong>@item.Value</strong>
+                            </div>
+                            <div class="chart-track">
+                                <div class="chart-fill @(item.Label.Contains("Hỏng") ? "chart-red" : "chart-amber")" style="width: @percent%"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="dashboard-note">
+                    Tổng tiền phạt ghi nhận: <strong>@Model.TongTienPhat.ToString("N0") đồng</strong>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-7">
+            <section class="dashboard-panel h-100">
+                <div class="dashboard-panel-header">
+                    <h2>Top độc giả vi phạm</h2>
+                    <span>Tối đa 5 người</span>
+                </div>
+
+                <div class="chart-list">
+                    @if (Model.TopDocGiaViPham.Any())
+                    {
+                        @foreach (var item in Model.TopDocGiaViPham)
+                        {
+                            var percent = item.Value * 100 / maxDocGia;
+                            <div class="chart-row">
+                                <div class="chart-row-label">
+                                    <span>@item.Label</span>
+                                    <strong>@item.Value lần</strong>
+                                </div>
+                                <div class="chart-track">
+                                    <div class="chart-fill chart-blue" style="width: @percent%"></div>
+                                </div>
+                                <div class="text-muted small">@item.Amount.ToString("N0") đồng</div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-row-message">Không có dữ liệu để vẽ biểu đồ.</div>
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
 
     <section class="borrow-board no-print">
         <div class="borrow-board-header">

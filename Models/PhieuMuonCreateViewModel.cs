@@ -32,6 +32,26 @@ public class PhieuMuonIndexViewModel
 {
     public string? TuKhoa { get; set; }
 
+    public string TrangThai { get; set; } = "TatCa";
+
+    [DataType(DataType.Date)]
+    public DateTime? TuNgay { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateTime? DenNgay { get; set; }
+
+    public int Page { get; set; } = 1;
+
+    public int PageSize { get; set; } = 10;
+
+    public int TotalItems { get; set; }
+
+    public int TotalPages => TotalItems == 0 ? 1 : (int)Math.Ceiling((double)TotalItems / PageSize);
+
+    public bool HasPreviousPage => Page > 1;
+
+    public bool HasNextPage => Page < TotalPages;
+
     public int TongPhieu { get; set; }
 
     public int DangMuon { get; set; }

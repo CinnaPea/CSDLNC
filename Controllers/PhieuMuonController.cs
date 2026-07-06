@@ -19,10 +19,13 @@ public class PhieuMuonController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? tuKhoa)
+    public async Task<IActionResult> Index(PhieuMuonIndexViewModel model)
     {
         if (!HasPermission("Q003"))
             return RedirectToAction("AccessDenied", "Account");
+
+        model.Page = Math.Max(1, model.Page);
+        model.PageSize = model.PageSize is 10 or 20 or 50 ? model.PageSize : 10;
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         var query = _db.PhieuMuons
@@ -31,41 +34,63 @@ public class PhieuMuonController : Controller
             .Include(x => x.CtPhieuMuons)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(tuKhoa))
+        if (!string.IsNullOrWhiteSpace(model.TuKhoa))
         {
-            var keyword = tuKhoa.Trim();
+            var keyword = model.TuKhoa.Trim();
             query = query.Where(x =>
                 x.Sophieumuon.Contains(keyword)
                 || x.Masinhvien.Contains(keyword)
                 || x.MasinhvienNavigation.Hoten.Contains(keyword));
         }
 
-        var allQuery = _db.PhieuMuons.AsNoTracking();
-        var model = new PhieuMuonIndexViewModel
+        if (model.TuNgay.HasValue)
         {
-            TuKhoa = tuKhoa,
-            TongPhieu = await allQuery.CountAsync(),
-            DangMuon = await allQuery.CountAsync(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null)),
-            DaTra = await allQuery.CountAsync(x => x.Ngayhoantat != null),
-            QuaHan = await allQuery.CountAsync(x => x.Hantra < today && x.CtPhieuMuons.Any(ct => ct.Ngaytra == null)),
-            DanhSachPhieu = await query
-                .OrderByDescending(x => x.Ngaymuon)
-                .ThenByDescending(x => x.Sophieumuon)
-                .Take(100)
-                .Select(x => new PhieuMuonListItemViewModel
-                {
-                    SoPhieuMuon = x.Sophieumuon,
-                    MaSinhVien = x.Masinhvien,
-                    TenSinhVien = x.MasinhvienNavigation.Hoten,
-                    NgayMuon = x.Ngaymuon,
-                    HanTra = x.Hantra,
-                    NgayTra = x.Ngayhoantat,
-                    TrangThai = x.Trangthaiphieu,
-                    TongSoLuong = x.Tongsoluong,
-                    SoSachChuaTra = x.CtPhieuMuons.Count(ct => ct.Ngaytra == null)
-                })
-                .ToListAsync()
+            var fromDate = DateOnly.FromDateTime(model.TuNgay.Value.Date);
+            query = query.Where(x => x.Ngaymuon >= fromDate);
+        }
+
+        if (model.DenNgay.HasValue)
+        {
+            var toDate = DateOnly.FromDateTime(model.DenNgay.Value.Date);
+            query = query.Where(x => x.Ngaymuon <= toDate);
+        }
+
+        query = model.TrangThai switch
+        {
+            "DangMuon" => query.Where(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null) && x.Hantra >= today),
+            "DaTra" => query.Where(x => !x.CtPhieuMuons.Any(ct => ct.Ngaytra == null)),
+            "QuaHan" => query.Where(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null) && x.Hantra < today),
+            _ => query
         };
+
+        var allQuery = _db.PhieuMuons.AsNoTracking();
+        model.TongPhieu = await allQuery.CountAsync();
+        model.DangMuon = await allQuery.CountAsync(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null));
+        model.DaTra = await allQuery.CountAsync(x => !x.CtPhieuMuons.Any(ct => ct.Ngaytra == null));
+        model.QuaHan = await allQuery.CountAsync(x => x.Hantra < today && x.CtPhieuMuons.Any(ct => ct.Ngaytra == null));
+        model.TotalItems = await query.CountAsync();
+
+        if (model.Page > model.TotalPages)
+            model.Page = model.TotalPages;
+
+        model.DanhSachPhieu = await query
+            .OrderByDescending(x => x.Ngaymuon)
+            .ThenByDescending(x => x.Sophieumuon)
+            .Skip((model.Page - 1) * model.PageSize)
+            .Take(model.PageSize)
+            .Select(x => new PhieuMuonListItemViewModel
+            {
+                SoPhieuMuon = x.Sophieumuon,
+                MaSinhVien = x.Masinhvien,
+                TenSinhVien = x.MasinhvienNavigation.Hoten,
+                NgayMuon = x.Ngaymuon,
+                HanTra = x.Hantra,
+                NgayTra = x.Ngayhoantat,
+                TrangThai = x.Trangthaiphieu,
+                TongSoLuong = x.Tongsoluong,
+                SoSachChuaTra = x.CtPhieuMuons.Count(ct => ct.Ngaytra == null)
+            })
+            .ToListAsync();
 
         return View(model);
     }

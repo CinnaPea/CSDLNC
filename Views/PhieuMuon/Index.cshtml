@@ -2,6 +2,8 @@
 
 @{
     ViewData["Title"] = "Phiếu mượn trả sách";
+    var fromDate = Model.TuNgay?.ToString("yyyy-MM-dd");
+    var toDate = Model.DenNgay?.ToString("yyyy-MM-dd");
 }
 
 @section Styles {
@@ -61,13 +63,47 @@
             <h2>Danh sách phiếu mượn trả</h2>
         </div>
 
+        <form asp-action="Index" method="get" class="filter-panel">
+            <div class="filter-grid">
+                <div class="borrow-search">
+                    <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
+                    <input name="TuKhoa"
+                           value="@Model.TuKhoa"
+                           placeholder="Số phiếu, mã sinh viên hoặc tên sinh viên" />
+                </div>
+
+                <select name="TrangThai" class="form-select">
+                    <option value="TatCa" selected="@(Model.TrangThai == "TatCa")">Tất cả trạng thái</option>
+                    <option value="DangMuon" selected="@(Model.TrangThai == "DangMuon")">Đang mượn</option>
+                    <option value="DaTra" selected="@(Model.TrangThai == "DaTra")">Đã trả</option>
+                    <option value="QuaHan" selected="@(Model.TrangThai == "QuaHan")">Quá hạn</option>
+                </select>
+
+                <input name="TuNgay" value="@fromDate" type="date" class="form-control" title="Từ ngày mượn" />
+                <input name="DenNgay" value="@toDate" type="date" class="form-control" title="Đến ngày mượn" />
+
+                <select name="PageSize" class="form-select">
+                    <option value="10" selected="@(Model.PageSize == 10)">10 dòng</option>
+                    <option value="20" selected="@(Model.PageSize == 20)">20 dòng</option>
+                    <option value="50" selected="@(Model.PageSize == 50)">50 dòng</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary">
+                    <iconify-icon icon="solar:filter-line-duotone"></iconify-icon>
+                    Lọc
+                </button>
+
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
+                    Làm mới
+                </a>
+            </div>
+        </form>
+
         <div class="borrow-toolbar">
-            <form asp-action="Index" method="get" class="borrow-search">
-                <iconify-icon icon="solar:magnifer-linear"></iconify-icon>
-                <input name="tuKhoa"
-                       value="@Model.TuKhoa"
-                       placeholder="Nhập số phiếu, mã sinh viên hoặc tên sinh viên" />
-            </form>
+            <div class="text-muted">
+                Hiển thị @Model.DanhSachPhieu.Count trên @Model.TotalItems phiếu phù hợp
+            </div>
 
             <div class="borrow-actions">
                 <a asp-action="Create" class="btn btn-primary">
@@ -83,10 +119,6 @@
                     <iconify-icon icon="solar:trash-bin-trash-line-duotone"></iconify-icon>
                     Xóa mục chọn
                 </button>
-                <a asp-action="Index" class="btn btn-outline-secondary">
-                    <iconify-icon icon="solar:restart-linear"></iconify-icon>
-                    Làm mới
-                </a>
             </div>
         </div>
 
@@ -135,7 +167,7 @@
                                     <div class="row-actions">
                                         <a asp-controller="TraSach"
                                            asp-action="Index"
-                                           asp-route-soPhieuMuon="@item.SoPhieuMuon"
+                                           asp-route-SoPhieuMuon="@item.SoPhieuMuon"
                                            class="icon-action"
                                            title="Sửa/cập nhật trả sách">
                                             <iconify-icon icon="solar:pen-line-duotone"></iconify-icon>
@@ -172,6 +204,32 @@
                 </table>
             </div>
         </form>
+
+        <div class="pagination-bar">
+            <div class="text-muted">Trang @Model.Page / @Model.TotalPages</div>
+            <div class="pagination-actions">
+                <a asp-action="Index"
+                   asp-route-TuKhoa="@Model.TuKhoa"
+                   asp-route-TrangThai="@Model.TrangThai"
+                   asp-route-TuNgay="@fromDate"
+                   asp-route-DenNgay="@toDate"
+                   asp-route-PageSize="@Model.PageSize"
+                   asp-route-Page="@(Model.Page - 1)"
+                   class="btn btn-outline-secondary @(Model.HasPreviousPage ? "" : "disabled")">
+                    Trước
+                </a>
+                <a asp-action="Index"
+                   asp-route-TuKhoa="@Model.TuKhoa"
+                   asp-route-TrangThai="@Model.TrangThai"
+                   asp-route-TuNgay="@fromDate"
+                   asp-route-DenNgay="@toDate"
+                   asp-route-PageSize="@Model.PageSize"
+                   asp-route-Page="@(Model.Page + 1)"
+                   class="btn btn-outline-secondary @(Model.HasNextPage ? "" : "disabled")">
+                    Sau
+                </a>
+            </div>
+        </div>
     </section>
 </div>
 

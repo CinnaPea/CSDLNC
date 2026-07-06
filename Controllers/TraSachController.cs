@@ -20,34 +20,25 @@ public class TraSachController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> Index(string? soPhieuMuon)
+    public async Task<IActionResult> Index(TraSachIndexViewModel model)
     {
         if (!HasPermission("Q004"))
             return RedirectToAction("AccessDenied", "Account");
 
-        var model = new TraSachIndexViewModel
-        {
-            SoPhieuMuon = soPhieuMuon,
-            PhieuMuonCanTra = await LayPhieuMuonCanTraAsync()
-        };
-        model.PhieuMuonOptions = BuildPhieuMuonOptions(model.PhieuMuonCanTra, soPhieuMuon);
+        model.Page = Math.Max(1, model.Page);
+        model.PageSize = model.PageSize is 8 or 15 or 30 ? model.PageSize : 8;
 
-        if (!string.IsNullOrWhiteSpace(soPhieuMuon))
-        {
-            model.ChiTiet = await LayChiTietPhieuMuonAsync(soPhieuMuon.Trim());
+        var filteredQuery = BuildPhieuMuonCanTraQuery(model);
+        model.TotalItems = await filteredQuery.CountAsync();
 
-            if (!model.ChiTiet.Any())
-                TempData["InfoMessage"] = $"Không tìm thấy phiếu mượn {soPhieuMuon}.";
-        }
+        if (model.Page > model.TotalPages)
+            model.Page = model.TotalPages;
 
-        return View(model);
-    }
-
-    private async Task<List<PhieuMuonCanTraViewModel>> LayPhieuMuonCanTraAsync()
-    {
-        return await _db.PhieuMuons
-            .Where(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null))
-            .OrderBy(x => x.Sophieumuon)
+        model.PhieuMuonCanTra = await filteredQuery
+            .OrderBy(x => x.Hantra)
+            .ThenBy(x => x.Sophieumuon)
+            .Skip((model.Page - 1) * model.PageSize)
+            .Take(model.PageSize)
             .Select(x => new PhieuMuonCanTraViewModel
             {
                 SoPhieuMuon = x.Sophieumuon,
@@ -58,6 +49,78 @@ public class TraSachController : Controller
                 SoSachChuaTra = x.CtPhieuMuons.Count(ct => ct.Ngaytra == null)
             })
             .ToListAsync();
+
+        var optionItems = await BuildPhieuMuonCanTraQuery(new TraSachIndexViewModel
+            {
+                TuKhoa = model.TuKhoa,
+                TrangThaiHan = model.TrangThaiHan,
+                TuNgay = model.TuNgay,
+                DenNgay = model.DenNgay
+            })
+            .OrderBy(x => x.Hantra)
+            .ThenBy(x => x.Sophieumuon)
+            .Take(200)
+            .Select(x => new PhieuMuonCanTraViewModel
+            {
+                SoPhieuMuon = x.Sophieumuon,
+                MaSinhVien = x.Masinhvien,
+                HoTen = x.MasinhvienNavigation.Hoten,
+                NgayMuon = x.Ngaymuon,
+                HanTra = x.Hantra,
+                SoSachChuaTra = x.CtPhieuMuons.Count(ct => ct.Ngaytra == null)
+            })
+            .ToListAsync();
+
+        model.PhieuMuonOptions = BuildPhieuMuonOptions(optionItems, model.SoPhieuMuon);
+
+        if (!string.IsNullOrWhiteSpace(model.SoPhieuMuon))
+        {
+            model.ChiTiet = await LayChiTietPhieuMuonAsync(model.SoPhieuMuon.Trim());
+
+            if (!model.ChiTiet.Any())
+                TempData["InfoMessage"] = $"Không tìm thấy phiếu mượn {model.SoPhieuMuon}.";
+        }
+
+        return View(model);
+    }
+
+    private IQueryable<PhieuMuon> BuildPhieuMuonCanTraQuery(TraSachIndexViewModel model)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var query = _db.PhieuMuons
+            .AsNoTracking()
+            .Where(x => x.CtPhieuMuons.Any(ct => ct.Ngaytra == null))
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(model.TuKhoa))
+        {
+            var keyword = model.TuKhoa.Trim();
+            query = query.Where(x =>
+                x.Sophieumuon.Contains(keyword)
+                || x.Masinhvien.Contains(keyword)
+                || x.MasinhvienNavigation.Hoten.Contains(keyword));
+        }
+
+        if (model.TuNgay.HasValue)
+        {
+            var fromDate = DateOnly.FromDateTime(model.TuNgay.Value.Date);
+            query = query.Where(x => x.Hantra >= fromDate);
+        }
+
+        if (model.DenNgay.HasValue)
+        {
+            var toDate = DateOnly.FromDateTime(model.DenNgay.Value.Date);
+            query = query.Where(x => x.Hantra <= toDate);
+        }
+
+        query = model.TrangThaiHan switch
+        {
+            "QuaHan" => query.Where(x => x.Hantra < today),
+            "ConHan" => query.Where(x => x.Hantra >= today),
+            _ => query
+        };
+
+        return query;
     }
 
     private static List<SelectListItem> BuildPhieuMuonOptions(

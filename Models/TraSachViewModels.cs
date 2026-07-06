@@ -7,6 +7,28 @@ public class TraSachIndexViewModel
 {
     public string? SoPhieuMuon { get; set; }
 
+    public string? TuKhoa { get; set; }
+
+    public string TrangThaiHan { get; set; } = "TatCa";
+
+    [DataType(DataType.Date)]
+    public DateTime? TuNgay { get; set; }
+
+    [DataType(DataType.Date)]
+    public DateTime? DenNgay { get; set; }
+
+    public int Page { get; set; } = 1;
+
+    public int PageSize { get; set; } = 8;
+
+    public int TotalItems { get; set; }
+
+    public int TotalPages => TotalItems == 0 ? 1 : (int)Math.Ceiling((double)TotalItems / PageSize);
+
+    public bool HasPreviousPage => Page > 1;
+
+    public bool HasNextPage => Page < TotalPages;
+
     public List<ChiTietPhieuMuonViewModel> ChiTiet { get; set; } = new();
 
     public List<PhieuMuonCanTraViewModel> PhieuMuonCanTra { get; set; } = new();

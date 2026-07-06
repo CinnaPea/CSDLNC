@@ -1,4 +1,5 @@
 using System.Data;
+using System.Globalization;
 using CSDLNC.Data;
 using CSDLNC.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,10 @@ public class ThongKeViPhamMuonTraController : Controller
             model.LoaiViPham = "Tất cả";
 
         if (ModelState.IsValid)
+        {
             model.KetQua = await LayThongKeAsync(model);
+            PopulateDashboard(model);
+        }
 
         return View(model);
     }
@@ -86,6 +90,63 @@ public class ThongKeViPhamMuonTraController : Controller
         }
 
         return results;
+    }
+
+    private static void PopulateDashboard(ThongKeViPhamMuonTraViewModel model)
+    {
+        model.TongViPham = model.KetQua.Count;
+        model.ViPhamQuaHan = model.KetQua.Count(x => IsQuaHan(x.LoaiViPham));
+        model.ViPhamHongMat = model.KetQua.Count(x => IsHongMat(x.LoaiViPham));
+        if (model.TongViPham > 0 && model.ViPhamHongMat == 0)
+            model.ViPhamHongMat = model.TongViPham - model.ViPhamQuaHan;
+        model.SoDocGiaViPham = model.KetQua.Select(x => x.MaSinhVien).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+        model.TongTienPhat = model.KetQua.Sum(x => ExtractAmount(x.HinhThucXuLy));
+
+        model.PhanBoLoaiViPham = new List<ThongKeChartItemViewModel>
+        {
+            new() { Label = "Quá hạn", Value = model.ViPhamQuaHan },
+            new() { Label = "Hỏng/Mất", Value = model.ViPhamHongMat }
+        };
+
+        model.TopDocGiaViPham = model.KetQua
+            .GroupBy(x => new { x.MaSinhVien, x.HoTen })
+            .Select(x => new ThongKeChartItemViewModel
+            {
+                Label = $"{x.Key.MaSinhVien} - {x.Key.HoTen}",
+                Value = x.Count(),
+                Amount = x.Sum(item => ExtractAmount(item.HinhThucXuLy))
+            })
+            .OrderByDescending(x => x.Value)
+            .ThenByDescending(x => x.Amount)
+            .Take(5)
+            .ToList();
+    }
+
+    private static bool IsQuaHan(string value)
+    {
+        return value.Contains("quá hạn", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("qua han", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsHongMat(string value)
+    {
+        return value.Contains("hỏng", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("mất", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("hong", StringComparison.OrdinalIgnoreCase)
+            || value.Contains("mat", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static decimal ExtractAmount(string value)
+    {
+        var amountText = new string(value.Where(x => char.IsDigit(x) || x == '.' || x == ',').ToArray());
+
+        if (string.IsNullOrWhiteSpace(amountText))
+            return 0;
+
+        amountText = amountText.Replace(",", ".");
+        return decimal.TryParse(amountText, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount)
+            ? amount
+            : 0;
     }
 
     private static string ReadString(IDataRecord reader, string name)
