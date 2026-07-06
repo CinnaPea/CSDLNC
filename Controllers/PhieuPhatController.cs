@@ -2,13 +2,14 @@
 using CSDLNC.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
 
 namespace CSDLNC.Controllers
 {
-    [Authorize(Policy = "CanManageFines")]
+    [Authorize]
     public class PhieuPhatController : Controller
     {
         private readonly ThuVienDbContext _context;
@@ -16,6 +17,22 @@ namespace CSDLNC.Controllers
         public PhieuPhatController(ThuVienDbContext context)
         {
             _context = context;
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext context)
+        {
+            var actionName = context.ActionDescriptor.RouteValues["action"];
+            var isReportAction = string.Equals(actionName, nameof(ThongKeHongMat), StringComparison.OrdinalIgnoreCase);
+            var canManageFines = User.HasClaim("Permission", "Q005") || User.HasClaim("Permission", "Q001");
+            var canViewFineReports = canManageFines || User.HasClaim("Permission", "Q009");
+
+            if ((isReportAction && !canViewFineReports) || (!isReportAction && !canManageFines))
+            {
+                context.Result = Forbid();
+                return;
+            }
+
+            base.OnActionExecuting(context);
         }
 
         private void NapDuLieuGoiY(string? soPhieuMuon = null)
