@@ -36,6 +36,11 @@ namespace CSDLNC
                         context.User.HasClaim("Permission", "Q009") ||
                         context.User.HasClaim("Permission", "Q005") ||
                         context.User.HasClaim("Permission", "Q001")));
+
+                options.AddPolicy("CanManageUsers", policy =>
+                    policy.RequireAssertion(context =>
+                        context.User.HasClaim("Permission", "Q010") ||
+                        context.User.HasClaim("Permission", "Q001")));
             });
 
             var app = builder.Build();

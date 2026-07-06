@@ -19,6 +19,16 @@
         </a>
     </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
     <!-- FILTER BAR -->
     <form method="get" class="row g-2 mb-3">
 
@@ -99,10 +109,15 @@
                                     Sửa
                                 </a>
 
-                                <button class="btn btn-sm btn-outline-danger"
-                                        onclick="confirmDelete('@u.Manguoidung')">
-                                    Xóa
-                                </button>
+                                <form asp-action="Delete"
+                                      asp-route-id="@u.Manguoidung"
+                                      method="post"
+                                      onsubmit="return confirm('Xac nhan xoa nguoi dung nay?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Xoa
+                                    </button>
+                                </form>
 
                             </td>
                         </tr>
@@ -174,11 +189,3 @@
         </div>
     }
 </div>
-
-<script>
-    function confirmDelete(id) {
-        if (confirm("Xác nhận xóa người dùng này?")) {
-            window.location.href = '/NguoiDung/Delete/' + id;
-        }
-    }
-</script>

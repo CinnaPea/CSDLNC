@@ -1,12 +1,15 @@
 ﻿using CSDLNC.Data;
 using CSDLNC.Models;
 using CSDLNC.Models.Admin;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace CSDLNC.Controllers.Admin;
 
+[Authorize(Policy = "CanManageUsers")]
 public class NguoiDungController : Controller
 {
     private readonly ThuVienDbContext _db;
@@ -75,13 +78,7 @@ public class NguoiDungController : Controller
             PageNumber = page,
             PageSize = pageSize,
             TotalUsers = totalUsers,
-            AvailableGroups = await _db.NhomNguoiDungs
-                .OrderBy(g => g.Manhom)
-                .Select(g => new SelectListItem
-                {
-                    Value = g.Manhom,
-                    Text = g.Tennhom
-                }).ToListAsync()
+            AvailableGroups = await GetAvailableGroups()
         };
 
         return View(vm);
@@ -94,12 +91,7 @@ public class NguoiDungController : Controller
     {
         var vm = new UserCreateEditViewModel
         {
-            AvailableGroups = await _db.NhomNguoiDungs
-                .Select(g => new SelectListItem
-                {
-                    Value = g.Manhom,
-                    Text = g.Tennhom
-                }).ToListAsync()
+            AvailableGroups = await GetAvailableGroups()
         };
 
         return View(vm);
@@ -109,8 +101,15 @@ public class NguoiDungController : Controller
     // CREATE POST
     // =========================
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(UserCreateEditViewModel vm)
     {
+        if (!ModelState.IsValid)
+        {
+            vm.AvailableGroups = await GetAvailableGroups();
+            return View(vm);
+        }
+
         var user = new NguoiDung
         {
             Manguoidung = Guid.NewGuid().ToString("N")[..10],
@@ -152,12 +151,7 @@ public class NguoiDungController : Controller
 
             SelectedGroups = user.Manhoms.Select(x => x.Manhom).ToList(),
 
-            AvailableGroups = await _db.NhomNguoiDungs
-                .Select(g => new SelectListItem
-                {
-                    Value = g.Manhom,
-                    Text = g.Tennhom
-                }).ToListAsync(),
+            AvailableGroups = await GetAvailableGroups(),
             EffectivePermissions = await GetEffectivePermissions(user.Manguoidung),
             GroupNames = user.Manhoms.Select(x => x.Tennhom).ToList()
         };
@@ -169,8 +163,15 @@ public class NguoiDungController : Controller
     // EDIT POST
     // =========================
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(UserCreateEditViewModel vm)
     {
+        if (!ModelState.IsValid)
+        {
+            vm.AvailableGroups = await GetAvailableGroups();
+            return View(vm);
+        }
+
         var user = await _db.NguoiDungs
             .Include(x => x.Manhoms)
             .FirstOrDefaultAsync(x => x.Manguoidung == vm.Manguoidung);
@@ -192,5 +193,56 @@ public class NguoiDungController : Controller
         await _db.SaveChangesAsync();
 
         return RedirectToAction("Index");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (id == currentUserId)
+        {
+            TempData["ErrorMessage"] = "Không thể xóa tài khoản đang đăng nhập.";
+            return RedirectToAction("Index");
+        }
+
+        var user = await _db.NguoiDungs
+            .Include(x => x.Manhoms)
+            .Include(x => x.Maquyens)
+            .FirstOrDefaultAsync(x => x.Manguoidung == id);
+
+        if (user == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy người dùng cần xóa.";
+            return RedirectToAction("Index");
+        }
+
+        user.Manhoms.Clear();
+        user.Maquyens.Clear();
+        _db.NguoiDungs.Remove(user);
+
+        try
+        {
+            await _db.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Đã xóa người dùng.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["ErrorMessage"] = "Không thể xóa người dùng vì đã phát sinh dữ liệu nghiệp vụ.";
+        }
+
+        return RedirectToAction("Index");
+    }
+
+    private Task<List<SelectListItem>> GetAvailableGroups()
+    {
+        return _db.NhomNguoiDungs
+            .OrderBy(g => g.Manhom)
+            .Select(g => new SelectListItem
+            {
+                Value = g.Manhom,
+                Text = g.Tennhom
+            })
+            .ToListAsync();
     }
 }

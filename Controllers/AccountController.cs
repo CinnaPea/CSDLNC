@@ -105,11 +105,6 @@ namespace CSDLNC.Controllers
                 Matkhau = model.MatKhau
             };
 
-            var defaultGroup = await _db.NhomNguoiDungs.FirstOrDefaultAsync(x => x.Manhom == "N004");
-
-            if (defaultGroup != null)
-                user.Manhoms.Add(defaultGroup);
-
             _db.NguoiDungs.Add(user);
             await _db.SaveChangesAsync();
 
