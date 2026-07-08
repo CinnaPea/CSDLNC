@@ -3,7 +3,7 @@
     var isAuthPage = controller == "Account";
 
     var canAdmin = User.HasClaim("Permission", "Q001") || User.HasClaim("Permission", "Q010");
-    var canCatalog = User.HasClaim("Permission", "Q002");
+    var canCatalog = canAdmin || User.HasClaim("Permission", "Q002");
     var canBorrow = User.HasClaim("Permission", "Q003");
     var canReturn = User.HasClaim("Permission", "Q004");
     var canFine = User.HasClaim("Permission", "Q005");

@@ -25,12 +25,6 @@ public partial class Sach
 
     public string Trangthai { get; set; } = null!;
 
-    public string? Manhan { get; set; }
-
-    public string? Sodangkycabiet { get; set; }
-
-    public string? Mavach { get; set; }
-
     public DateOnly? Ngaynhap { get; set; }
 
     public DateOnly? Ngaycapnhattrangthai { get; set; }

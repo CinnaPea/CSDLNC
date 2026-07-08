@@ -23,7 +23,6 @@ public partial class PhieuMuon
 
     public int Songayquahan { get; set; }
 
-    public DateOnly? Ngaytradutinh { get; set; }
 
     public DateOnly? Ngayhoantat { get; set; }
 

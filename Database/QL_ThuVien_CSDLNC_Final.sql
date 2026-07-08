@@ -89,9 +89,6 @@ CREATE TABLE sach
     namxuatban INT NULL,
     tinhtrang NVARCHAR(50) NOT NULL CONSTRAINT DF_sach_tinhtrang DEFAULT N'Có thể mượn',
     trangthai NVARCHAR(50) NOT NULL CONSTRAINT DF_sach_trangthai DEFAULT N'Trong kho',
-    manhan VARCHAR(50) NULL,
-    sodangkycabiet VARCHAR(50) NULL,
-    mavach VARCHAR(50) NULL,
     ngaynhap DATE NULL,
     ngaycapnhattrangthai DATE NULL,
     sophieumuonhientai VARCHAR(20) NULL,
@@ -113,7 +110,6 @@ CREATE TABLE phieu_muon
     tennguoidung NVARCHAR(100) NULL,
     trangthaiphieu NVARCHAR(50) NOT NULL CONSTRAINT DF_pm_trangthai DEFAULT N'Đang mượn',
     songayquahan INT NOT NULL CONSTRAINT DF_pm_songay DEFAULT 0,
-    ngaytradutinh DATE NULL,
     ngayhoantat DATE NULL,
     tongsoluong INT NOT NULL CONSTRAINT DF_pm_tongsl DEFAULT 0,
     CONSTRAINT FK_pm_sv FOREIGN KEY (masinhvien) REFERENCES sinh_vien(masinhvien)
@@ -126,12 +122,8 @@ CREATE TABLE ct_phieu_muon
     masach VARCHAR(20) NOT NULL,
     ngaytra DATE NULL,
     ghichu NVARCHAR(255) NULL,
-    kytra NVARCHAR(100) NULL,
     tongsoluong INT NOT NULL CONSTRAINT DF_ctpm_tongsl DEFAULT 1,
     soluong INT NOT NULL CONSTRAINT DF_ctpm_sl DEFAULT 1,
-    masinhvien VARCHAR(20) NULL,
-    madausach VARCHAR(20) NULL,
-    theloai NVARCHAR(100) NULL,
     CONSTRAINT PK_ct_phieu_muon PRIMARY KEY (sophieumuon, masach),
     CONSTRAINT FK_ctpm_pm FOREIGN KEY (sophieumuon) REFERENCES phieu_muon(sophieumuon),
     CONSTRAINT FK_ctpm_sach FOREIGN KEY (masach) REFERENCES sach(masach)
@@ -432,12 +424,71 @@ INSERT INTO quyen (maquyen, tenquyen) VALUES
 GO
 
 /* =========================
-   3. PHAN QUYEN
-   Final role packages are created once near the end of this script, after all procedures are installed.
+   3. NHÓM NGƯỜI DÙNG
    ========================= */
+INSERT INTO nhom_nguoi_dung (manhom, tennhom) VALUES
+('N001', N'Quản trị viên'),
+('N002', N'Thủ thư'),
+('N003', N'Nhân viên kho'),
+('N004', N'Kế toán thư viện'),
+('N005', N'Quản lý thư viện'),
+('N006', N'Nhân viên kiểm kê'),
+('N007', N'Nhân viên báo cáo'),
+('N008', N'Nhân viên nhập sách'),
+('N009', N'Nhân viên thanh lý'),
+('N010', N'Tài khoản xem dữ liệu');
+GO
 
 /* =========================
-   7. SINH VIEN
+   4. NGƯỜI DÙNG - QUYỀN
+   ========================= */
+INSERT INTO nguoi_dung_quyen (manguoidung, maquyen) VALUES
+('ND001', 'Q001'),
+('ND001', 'Q010'),
+('ND002', 'Q003'),
+('ND002', 'Q004'),
+('ND003', 'Q006'),
+('ND004', 'Q005'),
+('ND005', 'Q003'),
+('ND006', 'Q002'),
+('ND007', 'Q009'),
+('ND008', 'Q007');
+GO
+
+/* =========================
+   5. NHÓM - QUYỀN
+   ========================= */
+INSERT INTO nhom_quyen (manhom, maquyen) VALUES
+('N001', 'Q001'),
+('N001', 'Q010'),
+('N002', 'Q003'),
+('N002', 'Q004'),
+('N003', 'Q006'),
+('N004', 'Q005'),
+('N005', 'Q009'),
+('N006', 'Q006'),
+('N008', 'Q002'),
+('N009', 'Q007');
+GO
+
+/* =========================
+   6. NHÓM - NGƯỜI DÙNG
+   ========================= */
+INSERT INTO nhom_nguoi_dung_ct (manhom, manguoidung) VALUES
+('N001', 'ND001'),
+('N002', 'ND002'),
+('N003', 'ND003'),
+('N004', 'ND004'),
+('N002', 'ND005'),
+('N008', 'ND006'),
+('N007', 'ND007'),
+('N005', 'ND008'),
+('N006', 'ND009'),
+('N010', 'ND010');
+GO
+
+/* =========================
+   7. SINH VIÊN
    ========================= */
 INSERT INTO sinh_vien (masinhvien, hoten, gioitinh, lop, khoa, sodienthoai) VALUES
 ('SV001', N'Nguyễn Văn An', N'Nam', 'CNTT1', 'K58', '0911111111'),
@@ -924,35 +975,6 @@ LEFT JOIN (
 ) x ON ds.madausach = x.madausach;
 GO
 
-CREATE OR ALTER PROCEDURE dbo.sp_DongBoDauSach
-    @MaDauSach VARCHAR(20) = NULL
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    UPDATE ds
-    SET soluong = ISNULL(x.tongban, 0),
-        soluonghienco = ISNULL(x.hienco, 0),
-        soluongdangmuon = ISNULL(x.dangmuon, 0),
-        soluonghongmat = ISNULL(x.hongmat, 0),
-        lanmuongannhat = x.lanmuongannhat,
-        chuoitimkiem = CONCAT(ds.tendausach, N' ', ISNULL(ds.theloai, N''), N' ', ISNULL(ds.tacgia, N''))
-    FROM dau_sach ds
-    LEFT JOIN (
-        SELECT s.madausach,
-               COUNT(*) AS tongban,
-               SUM(CASE WHEN s.tinhtrang = N'Có thể mượn' THEN 1 ELSE 0 END) AS hienco,
-               SUM(CASE WHEN s.tinhtrang = N'Đang mượn' THEN 1 ELSE 0 END) AS dangmuon,
-               SUM(CASE WHEN s.tinhtrang IN (N'Hỏng', N'Mất') THEN 1 ELSE 0 END) AS hongmat,
-               MAX(s.ngaymuongannhat) AS lanmuongannhat
-        FROM sach s
-        WHERE @MaDauSach IS NULL OR s.madausach = @MaDauSach
-        GROUP BY s.madausach
-    ) x ON ds.madausach = x.madausach
-    WHERE @MaDauSach IS NULL OR ds.madausach = @MaDauSach;
-END;
-GO
-
 CREATE TYPE dbo.DanhSachSachMuon AS TABLE
 (
     MaSach VARCHAR(20) PRIMARY KEY,
@@ -1021,11 +1043,10 @@ BEGIN
         INSERT INTO phieu_muon(sophieumuon, masinhvien, ngaymuon, hantra, trangthaiphieu, tongsoluong)
         VALUES (@SoPhieuMuon, @MaSinhVien, @NgayMuon, @HanTra, N'Đang mượn', (SELECT COUNT(*) FROM @DanhSachSach));
 
-        INSERT INTO ct_phieu_muon(sophieumuon, masach, ngaytra, ghichu, tongsoluong, soluong, masinhvien, madausach, theloai)
+        INSERT INTO ct_phieu_muon(sophieumuon, masach, ngaytra, ghichu, tongsoluong, soluong)
         SELECT @SoPhieuMuon, ds.MaSach, NULL, ds.GhiChu,
-               (SELECT COUNT(*) FROM @DanhSachSach), 1, @MaSinhVien, s.madausach, s.theloai
-        FROM @DanhSachSach ds
-        INNER JOIN sach s ON ds.MaSach = s.masach;
+               (SELECT COUNT(*) FROM @DanhSachSach), 1
+        FROM @DanhSachSach ds;
 
         UPDATE s
         SET tinhtrang = N'Đang mượn',
@@ -1040,8 +1061,6 @@ BEGIN
         UPDATE sinh_vien
         SET sosachdangmuon = sosachdangmuon + (SELECT COUNT(*) FROM @DanhSachSach)
         WHERE masinhvien = @MaSinhVien;
-
-        EXEC dbo.sp_DongBoDauSach;
 
         COMMIT TRANSACTION;
     END TRY
@@ -1082,7 +1101,7 @@ BEGIN
 END;
 GO
 
-CREATE OR ALTER PROCEDURE dbo.sp_CapNhatTraSach
+CREATE PROCEDURE sp_CapNhatTraSach
     @SoPhieuMuon VARCHAR(20),
     @MaSach VARCHAR(20),
     @NgayTra DATE,
@@ -1093,7 +1112,11 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @MaSinhVien VARCHAR(20);
+    DECLARE @NgayMuon DATE;
     DECLARE @HanTra DATE;
+    DECLARE @SoNgayQuaHan INT;
+    DECLARE @PhiPhat DECIMAL(18,2);
+    DECLARE @SoPhieuPhat VARCHAR(30);
 
     BEGIN TRY
         BEGIN TRANSACTION;
@@ -1101,29 +1124,25 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach)
             THROW 51001, N'Sách không thuộc phiếu mượn này.', 1;
 
-        IF EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach AND ngaytra IS NOT NULL)
-            THROW 51002, N'Sách đã được trả trước đó.', 1;
-
-        SELECT @MaSinhVien = masinhvien, @HanTra = hantra
+        SELECT @MaSinhVien = masinhvien, @NgayMuon = ngaymuon, @HanTra = hantra
         FROM phieu_muon
         WHERE sophieumuon = @SoPhieuMuon;
-
-        IF @MaSinhVien IS NULL
-            THROW 51005, N'Không tìm thấy phiếu mượn.', 1;
-
-        IF @TinhTrangSauTra <> N'Tốt'
-            THROW 51003, N'Cập nhật trả sách chỉ dùng cho trả bình thường. Hãy lập phiếu phạt cho sách hỏng, mất hoặc quá hạn.', 1;
-
-        IF @NgayTra > @HanTra
-            THROW 51004, N'Sách quá hạn phải lập phiếu phạt quá hạn.', 1;
 
         UPDATE ct_phieu_muon
         SET ngaytra = @NgayTra, ghichu = @GhiChu
         WHERE sophieumuon = @SoPhieuMuon AND masach = @MaSach;
 
         UPDATE sach
-        SET tinhtrang = N'Có thể mượn',
-            trangthai = N'Trong kho',
+        SET tinhtrang = CASE 
+                WHEN @TinhTrangSauTra = N'Tốt' THEN N'Có thể mượn'
+                WHEN @TinhTrangSauTra = N'Hỏng' THEN N'Hỏng'
+                WHEN @TinhTrangSauTra = N'Mất' THEN N'Mất'
+                ELSE @TinhTrangSauTra
+            END,
+            trangthai = CASE 
+                WHEN @TinhTrangSauTra = N'Tốt' THEN N'Trong kho'
+                ELSE @TinhTrangSauTra
+            END,
             sophieumuonhientai = NULL,
             ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
         WHERE masach = @MaSach;
@@ -1132,14 +1151,49 @@ BEGIN
         SET sosachdangmuon = CASE WHEN sosachdangmuon > 0 THEN sosachdangmuon - 1 ELSE 0 END
         WHERE masinhvien = @MaSinhVien;
 
+        IF @NgayTra > @HanTra
+        BEGIN
+            SET @SoNgayQuaHan = DATEDIFF(DAY, @HanTra, @NgayTra);
+            SET @PhiPhat = @SoNgayQuaHan * 2000;
+            SET @SoPhieuPhat = CONCAT('PQH', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
+
+            INSERT INTO phieu_phat_qua_han(sophieuphatquahan, ngaylap, sophieumuon, masinhvien, tongphat, sotienconlai)
+            VALUES (@SoPhieuPhat, CAST(GETDATE() AS DATE), @SoPhieuMuon, @MaSinhVien, @PhiPhat, @PhiPhat);
+
+            INSERT INTO ct_phieu_phat_qua_han(sophieuphatquahan, masach, songayquahan, phiphat, ngaymuon, hantra, ngaytra, tongphat)
+            VALUES (@SoPhieuPhat, @MaSach, @SoNgayQuaHan, @PhiPhat, @NgayMuon, @HanTra, @NgayTra, @PhiPhat);
+
+            UPDATE sinh_vien
+            SET solanvipham = solanvipham + 1,
+                sotienphatchuatra = sotienphatchuatra + @PhiPhat,
+                ngayviphamgannhat = CAST(GETDATE() AS DATE)
+            WHERE masinhvien = @MaSinhVien;
+        END
+
+        IF @TinhTrangSauTra IN (N'Hỏng', N'Mất')
+        BEGIN
+            SET @PhiPhat = CASE WHEN @TinhTrangSauTra = N'Hỏng' THEN 50000 ELSE 100000 END;
+            SET @SoPhieuPhat = CONCAT('PHM', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
+
+            INSERT INTO phieu_phat_hong_mat(sophieuphathongmat, ngaylap, sophieumuon, masinhvien, tongphat, sotienconlai)
+            VALUES (@SoPhieuPhat, CAST(GETDATE() AS DATE), @SoPhieuMuon, @MaSinhVien, @PhiPhat, @PhiPhat);
+
+            INSERT INTO ct_phieu_phat_hong_mat(sophieuphathongmat, masach, tinhtrang, mucdo, phiphat, tongphat)
+            VALUES (@SoPhieuPhat, @MaSach, @TinhTrangSauTra, @TinhTrangSauTra, @PhiPhat, @PhiPhat);
+
+            UPDATE sinh_vien
+            SET solanvipham = solanvipham + 1,
+                sotienphatchuatra = sotienphatchuatra + @PhiPhat,
+                ngayviphamgannhat = CAST(GETDATE() AS DATE)
+            WHERE masinhvien = @MaSinhVien;
+        END
+
         IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuon AND ngaytra IS NULL)
         BEGIN
             UPDATE phieu_muon
             SET trangthaiphieu = N'Đã trả', ngayhoantat = @NgayTra
             WHERE sophieumuon = @SoPhieuMuon;
         END
-
-        EXEC dbo.sp_DongBoDauSach;
 
         COMMIT TRANSACTION;
     END TRY
@@ -1201,377 +1255,5 @@ BEGIN
 END;
 GO
 
-PRINT N'DA TAO XONG PHAN LOI DATABASE QL_ThuVien_CSDLNC';
+PRINT N'DA TAO XONG DATABASE QL_ThuVien_CSDLNC';
 GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_ThongKeSachHongMatTrongThang
-    @Thang INT,
-    @Nam INT,
-    @TinhTrang NVARCHAR(50) = N'Tất cả'
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    SELECT
-        s.masach AS MaSach,
-        s.tensach AS TenSach,
-        s.theloai AS TheLoai,
-        s.tacgia AS TacGia,
-        s.nhaxuatban AS NXB,
-        s.tinhtrang AS TinhTrang
-    FROM sach s
-    WHERE MONTH(s.ngaycapnhattrangthai) = @Thang
-      AND YEAR(s.ngaycapnhattrangthai) = @Nam
-      AND s.tinhtrang IN (N'Hỏng', N'Mất')
-      AND (@TinhTrang = N'Tất cả' OR s.tinhtrang = @TinhTrang);
-
-    SELECT
-        COUNT(*) AS TongSoSachHongMat,
-        SUM(CASE WHEN s.tinhtrang = N'Hỏng' THEN 1 ELSE 0 END) AS SoSachHong,
-        SUM(CASE WHEN s.tinhtrang = N'Mất' THEN 1 ELSE 0 END) AS SoSachMat
-    FROM sach s
-    WHERE MONTH(s.ngaycapnhattrangthai) = @Thang
-      AND YEAR(s.ngaycapnhattrangthai) = @Nam
-      AND s.tinhtrang IN (N'Hỏng', N'Mất')
-      AND (@TinhTrang = N'Tất cả' OR s.tinhtrang = @TinhTrang);
-END;
-GO
-
-IF TYPE_ID(N'dbo.DanhSachSachPhatHongMatType') IS NULL
-BEGIN
-    EXEC(N'
-        CREATE TYPE dbo.DanhSachSachPhatHongMatType AS TABLE
-        (
-            masach VARCHAR(20),
-            tinhtrang NVARCHAR(50),
-            mucdo NVARCHAR(255),
-            phiphat DECIMAL(18,2)
-        );
-    ');
-END;
-GO
-
-IF TYPE_ID(N'dbo.DanhSachSachPhatQuaHanType') IS NULL
-BEGIN
-    EXEC(N'
-        CREATE TYPE dbo.DanhSachSachPhatQuaHanType AS TABLE
-        (
-            masach VARCHAR(20)
-        );
-    ');
-END;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_LapPhieuPhatHongMat
-    @SoPhieuMuonTra VARCHAR(20),
-    @DanhSachSach dbo.DanhSachSachPhatHongMatType READONLY,
-    @MaNguoiDung VARCHAR(20) = NULL,
-    @TenNguoiDung NVARCHAR(100) = NULL,
-    @SoPhieuPhatHongMat VARCHAR(20) OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @MaSinhVien VARCHAR(20);
-
-    SELECT @MaSinhVien = masinhvien
-    FROM phieu_muon
-    WHERE sophieumuon = @SoPhieuMuonTra;
-
-    IF @MaSinhVien IS NULL
-        THROW 52001, N'Phiếu mượn không tồn tại.', 1;
-
-    IF EXISTS (
-        SELECT 1
-        FROM @DanhSachSach ds
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM ct_phieu_muon ct
-            WHERE ct.sophieumuon = @SoPhieuMuonTra
-              AND ct.masach = ds.masach
-              AND ct.ngaytra IS NULL
-        )
-    )
-        THROW 52002, N'Có sách không thuộc phiếu mượn này hoặc đã trả.', 1;
-
-    IF EXISTS (
-        SELECT 1
-        FROM @DanhSachSach ds
-        WHERE EXISTS (
-            SELECT 1
-            FROM phieu_phat_hong_mat p
-            INNER JOIN ct_phieu_phat_hong_mat ct ON p.sophieuphathongmat = ct.sophieuphathongmat
-            WHERE p.sophieumuon = @SoPhieuMuonTra
-              AND ct.masach = ds.masach
-        )
-    )
-        THROW 52003, N'Sách đã có phiếu phạt hỏng/mất.', 1;
-
-    SET @SoPhieuPhatHongMat = CONCAT('PHM', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
-
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO phieu_phat_hong_mat
-        (
-            sophieuphathongmat, ngaylap, sophieumuon, masinhvien,
-            manguoidung, tennguoidung, tongphat, sotienconlai
-        )
-        SELECT
-            @SoPhieuPhatHongMat, CAST(GETDATE() AS DATE), @SoPhieuMuonTra, @MaSinhVien,
-            @MaNguoiDung, @TenNguoiDung, SUM(phiphat), SUM(phiphat)
-        FROM @DanhSachSach;
-
-        INSERT INTO ct_phieu_phat_hong_mat
-        (
-            sophieuphathongmat, masach, tinhtrang, mucdo, phiphat, tongphat
-        )
-        SELECT
-            @SoPhieuPhatHongMat, masach, tinhtrang, mucdo, phiphat, phiphat
-        FROM @DanhSachSach;
-
-        UPDATE s
-        SET tinhtrang = ds.tinhtrang,
-            trangthai = ds.tinhtrang,
-            sophieumuonhientai = NULL,
-            ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
-        FROM sach s
-        INNER JOIN @DanhSachSach ds ON s.masach = ds.masach;
-
-        UPDATE ct
-        SET ngaytra = CAST(GETDATE() AS DATE),
-            ghichu = N'Đã lập phiếu phạt hỏng/mất: ' + @SoPhieuPhatHongMat
-        FROM ct_phieu_muon ct
-        INNER JOIN @DanhSachSach ds ON ct.masach = ds.masach
-        WHERE ct.sophieumuon = @SoPhieuMuonTra
-          AND ct.ngaytra IS NULL;
-
-        UPDATE sinh_vien
-        SET solanvipham = solanvipham + 1,
-            sotienphatchuatra = sotienphatchuatra + (SELECT SUM(phiphat) FROM @DanhSachSach),
-            ngayviphamgannhat = CAST(GETDATE() AS DATE),
-            sosachdangmuon = (
-                SELECT COUNT(*)
-                FROM ct_phieu_muon ct
-                INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
-                WHERE pm.masinhvien = @MaSinhVien
-                  AND ct.ngaytra IS NULL
-            )
-        WHERE masinhvien = @MaSinhVien;
-
-        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuonTra AND ngaytra IS NULL)
-        BEGIN
-            UPDATE phieu_muon
-            SET trangthaiphieu = N'Đã trả',
-                ngayhoantat = CAST(GETDATE() AS DATE)
-            WHERE sophieumuon = @SoPhieuMuonTra;
-        END
-
-        EXEC dbo.sp_DongBoDauSach;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
-CREATE OR ALTER PROCEDURE dbo.sp_LapPhieuPhatQuaHan
-    @SoPhieuMuonTra VARCHAR(20),
-    @DanhSachSach dbo.DanhSachSachPhatQuaHanType READONLY,
-    @NgayTra DATE,
-    @MucPhatMoiNgay DECIMAL(18,2),
-    @MaNguoiDung VARCHAR(20) = NULL,
-    @TenNguoiDung NVARCHAR(100) = NULL,
-    @SoPhieuPhatQuaHan VARCHAR(20) OUTPUT
-AS
-BEGIN
-    SET NOCOUNT ON;
-
-    DECLARE @MaSinhVien VARCHAR(20);
-    DECLARE @NgayMuon DATE;
-    DECLARE @HanTra DATE;
-    DECLARE @SoNgayQuaHan INT;
-    DECLARE @PhiMoiSach DECIMAL(18,2);
-    DECLARE @TongPhat DECIMAL(18,2);
-
-    SELECT
-        @MaSinhVien = masinhvien,
-        @NgayMuon = ngaymuon,
-        @HanTra = hantra
-    FROM phieu_muon
-    WHERE sophieumuon = @SoPhieuMuonTra;
-
-    IF @MaSinhVien IS NULL
-        THROW 53001, N'Phiếu mượn không tồn tại.', 1;
-
-    SET @SoNgayQuaHan = DATEDIFF(DAY, @HanTra, @NgayTra);
-
-    IF @SoNgayQuaHan <= 0
-        THROW 53002, N'Phiếu mượn chưa quá hạn.', 1;
-
-    IF EXISTS (
-        SELECT 1
-        FROM @DanhSachSach ds
-        WHERE NOT EXISTS (
-            SELECT 1
-            FROM ct_phieu_muon ct
-            WHERE ct.sophieumuon = @SoPhieuMuonTra
-              AND ct.masach = ds.masach
-              AND ct.ngaytra IS NULL
-        )
-    )
-        THROW 53003, N'Có sách không thuộc phiếu mượn này hoặc đã trả.', 1;
-
-    IF EXISTS (
-        SELECT 1
-        FROM @DanhSachSach ds
-        WHERE EXISTS (
-            SELECT 1
-            FROM phieu_phat_qua_han p
-            INNER JOIN ct_phieu_phat_qua_han ct ON p.sophieuphatquahan = ct.sophieuphatquahan
-            WHERE p.sophieumuon = @SoPhieuMuonTra
-              AND ct.masach = ds.masach
-        )
-    )
-        THROW 53004, N'Sách đã có phiếu phạt quá hạn.', 1;
-
-    SET @PhiMoiSach = @SoNgayQuaHan * @MucPhatMoiNgay;
-    SET @TongPhat = @PhiMoiSach * (SELECT COUNT(*) FROM @DanhSachSach);
-    SET @SoPhieuPhatQuaHan = CONCAT('PQH', RIGHT(REPLACE(CONVERT(VARCHAR(36), NEWID()), '-', ''), 12));
-
-    BEGIN TRY
-        BEGIN TRANSACTION;
-
-        INSERT INTO phieu_phat_qua_han
-        (
-            sophieuphatquahan, ngaylap, sophieumuon, masinhvien,
-            manguoidung, tennguoidung, tongphat, sotienconlai
-        )
-        VALUES
-        (
-            @SoPhieuPhatQuaHan, CAST(GETDATE() AS DATE), @SoPhieuMuonTra, @MaSinhVien,
-            @MaNguoiDung, @TenNguoiDung, @TongPhat, @TongPhat
-        );
-
-        INSERT INTO ct_phieu_phat_qua_han
-        (
-            sophieuphatquahan, masach, songayquahan,
-            phiphat, ngaymuon, hantra, ngaytra, tongphat
-        )
-        SELECT
-            @SoPhieuPhatQuaHan, masach, @SoNgayQuaHan,
-            @PhiMoiSach, @NgayMuon, @HanTra, @NgayTra, @PhiMoiSach
-        FROM @DanhSachSach;
-
-        UPDATE ct
-        SET ngaytra = @NgayTra,
-            ghichu = N'Đã lập phiếu phạt quá hạn: ' + @SoPhieuPhatQuaHan
-        FROM ct_phieu_muon ct
-        INNER JOIN @DanhSachSach ds ON ct.masach = ds.masach
-        WHERE ct.sophieumuon = @SoPhieuMuonTra;
-
-        UPDATE s
-        SET tinhtrang = N'Có thể mượn',
-            trangthai = N'Trong kho',
-            sophieumuonhientai = NULL,
-            ngaycapnhattrangthai = CAST(GETDATE() AS DATE)
-        FROM sach s
-        INNER JOIN @DanhSachSach ds ON s.masach = ds.masach;
-
-        UPDATE sinh_vien
-        SET solanvipham = solanvipham + 1,
-            sotienphatchuatra = sotienphatchuatra + @TongPhat,
-            ngayviphamgannhat = CAST(GETDATE() AS DATE),
-            sosachdangmuon = (
-                SELECT COUNT(*)
-                FROM ct_phieu_muon ct
-                INNER JOIN phieu_muon pm ON pm.sophieumuon = ct.sophieumuon
-                WHERE pm.masinhvien = @MaSinhVien
-                  AND ct.ngaytra IS NULL
-            )
-        WHERE masinhvien = @MaSinhVien;
-
-        IF NOT EXISTS (SELECT 1 FROM ct_phieu_muon WHERE sophieumuon = @SoPhieuMuonTra AND ngaytra IS NULL)
-        BEGIN
-            UPDATE phieu_muon
-            SET trangthaiphieu = N'Đã trả',
-                ngayhoantat = @NgayTra
-            WHERE sophieumuon = @SoPhieuMuonTra;
-        END
-
-        EXEC dbo.sp_DongBoDauSach;
-
-        COMMIT TRANSACTION;
-    END TRY
-    BEGIN CATCH
-        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
-        THROW;
-    END CATCH
-END;
-GO
-
-
--- Reset role package mappings
-DELETE FROM nguoi_dung_quyen;
-DELETE FROM nhom_nguoi_dung_ct;
-DELETE FROM nhom_quyen;
-
--- Reset finalized groups
-DELETE FROM nhom_nguoi_dung;
-
-INSERT INTO nhom_nguoi_dung (manhom, tennhom) VALUES
-('N001', N'Quản trị viên'),
-('N002', N'Thủ thư nghiệp vụ'),
-('N003', N'Kho và kiểm kê'),
-('N004', N'Quản lý và báo cáo');
-
--- N001: Quản trị viên - full permissions
-INSERT INTO nhom_quyen (manhom, maquyen) VALUES
-('N001', 'Q001'),
-('N001', 'Q002'),
-('N001', 'Q003'),
-('N001', 'Q004'),
-('N001', 'Q005'),
-('N001', 'Q006'),
-('N001', 'Q007'),
-('N001', 'Q008'),
-('N001', 'Q009'),
-('N001', 'Q010');
-
--- N002: Thủ thư nghiệp vụ
-INSERT INTO nhom_quyen (manhom, maquyen) VALUES
-('N002', 'Q002'), -- Quản lý danh mục sách
-('N002', 'Q003'), -- Lập phiếu mượn sách
-('N002', 'Q004'), -- Cập nhật trả sách
-('N002', 'Q005'); -- Lập phiếu phạt
-
--- N003: Kho và kiểm kê
-INSERT INTO nhom_quyen (manhom, maquyen) VALUES
-('N003', 'Q002'), -- Quản lý danh mục sách
-('N003', 'Q006'), -- Kiểm kê sách
-('N003', 'Q007'), -- Thanh lý sách
-('N003', 'Q008'); -- Hủy sách
-
--- N004: Quản lý và báo cáo
-INSERT INTO nhom_quyen (manhom, maquyen) VALUES
-('N004', 'Q005'), -- Xem/kiểm tra phiếu phạt
-('N004', 'Q009'); -- Thống kê báo cáo
-
--- Assign users to finalized packages
-INSERT INTO nhom_nguoi_dung_ct (manhom, manguoidung) VALUES
-('N001', 'ND001'), -- admin
-
-('N002', 'ND002'), -- thuthu01
-('N002', 'ND005'), -- thuthu02
-
-('N003', 'ND003'), -- kho01
-('N003', 'ND006'), -- kho02
-('N003', 'ND009'), -- kiemke01
-
-('N004', 'ND004'), -- ketoan01
-('N004', 'ND007'), -- baocao01
-('N004', 'ND008'), -- quanly01
-('N004', 'ND010'); -- user01

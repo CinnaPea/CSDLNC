@@ -13,7 +13,6 @@ public partial class CtPhieuMuon
 
     public string? Ghichu { get; set; }
 
-    public string? Kytra { get; set; }
 
     public int Tongsoluong { get; set; }
 

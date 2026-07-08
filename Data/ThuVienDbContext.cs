@@ -230,9 +230,6 @@ public partial class ThuVienDbContext : DbContext
             entity.Property(e => e.Ghichu)
                 .HasMaxLength(255)
                 .HasColumnName("ghichu");
-            entity.Property(e => e.Kytra)
-                .HasMaxLength(100)
-                .HasColumnName("kytra");
             entity.Property(e => e.Madausach)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -696,7 +693,6 @@ public partial class ThuVienDbContext : DbContext
                 .HasColumnName("masinhvien");
             entity.Property(e => e.Ngayhoantat).HasColumnName("ngayhoantat");
             entity.Property(e => e.Ngaymuon).HasColumnName("ngaymuon");
-            entity.Property(e => e.Ngaytradutinh).HasColumnName("ngaytradutinh");
             entity.Property(e => e.Nguoilapphieu)
                 .HasMaxLength(100)
                 .HasColumnName("nguoilapphieu");
@@ -896,14 +892,6 @@ public partial class ThuVienDbContext : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("madausach");
-            entity.Property(e => e.Manhan)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("manhan");
-            entity.Property(e => e.Mavach)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("mavach");
             entity.Property(e => e.Mavitri)
                 .HasMaxLength(20)
                 .IsUnicode(false)
@@ -915,10 +903,6 @@ public partial class ThuVienDbContext : DbContext
             entity.Property(e => e.Nhaxuatban)
                 .HasMaxLength(150)
                 .HasColumnName("nhaxuatban");
-            entity.Property(e => e.Sodangkycabiet)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("sodangkycabiet");
             entity.Property(e => e.Solanmuon).HasColumnName("solanmuon");
             entity.Property(e => e.Sophieumuonhientai)
                 .HasMaxLength(20)
